@@ -126,3 +126,7 @@ all.config
 # dtb objects
 *.dtb
 *.dtbo
+
+# Kyle Howen
+core
+fs/aufs/conf.str*
