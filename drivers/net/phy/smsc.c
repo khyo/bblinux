@@ -76,8 +76,15 @@ static int smsc_phy_config_init(struct phy_device *phydev)
 	return smsc_phy_ack_interrupt(phydev);
 }
 
+static char firstReset = 1;
 static int smsc_phy_reset(struct phy_device *phydev)
 {
+    if (firstReset) {
+        firstReset = 0;
+        printk("first phy reset masked\n");
+        return 0;
+    }
+    printk("phy reset\n");
 	int rc = phy_read(phydev, MII_LAN83C185_SPECIAL_MODES);
 	if (rc < 0)
 		return rc;
