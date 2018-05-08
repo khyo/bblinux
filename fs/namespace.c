@@ -2806,8 +2806,8 @@ long do_mount(const char *dev_name, const char __user *dir_name,
 		goto dput_out;
 
 	/* Default to relatime unless overriden */
-	if (!(flags & MS_NOATIME))
-		mnt_flags |= MNT_RELATIME;
+	if (!(flags & MS_RELATIME))
+		mnt_flags |= MNT_NOATIME;
 
 	/* Separate the per-mountpoint flags */
 	if (flags & MS_NOSUID)

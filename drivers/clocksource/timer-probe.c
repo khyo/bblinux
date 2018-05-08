@@ -50,5 +50,5 @@ void __init timer_probe(void)
 	timers += acpi_probe_device_table(timer);
 
 	if (!timers)
-		pr_crit("%s: no matching timers found\n", __func__);
+		pr_info("%s: no matching timers found\n", __func__);
 }

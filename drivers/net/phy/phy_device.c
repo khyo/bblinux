@@ -1386,7 +1386,6 @@ int genphy_config_aneg(struct phy_device *phydev)
 {
 	int err, changed;
 
-	printk("phy config aneg");
 	changed = genphy_config_eee_advert(phydev);
 
 	if (AUTONEG_ENABLE != phydev->autoneg)
@@ -1432,7 +1431,6 @@ EXPORT_SYMBOL(genphy_config_aneg);
 int genphy_aneg_done(struct phy_device *phydev)
 {
 	int retval = phy_read(phydev, MII_BMSR);
-	printk("phy aneg status: %u\n", retval);
 	return (retval < 0) ? retval : (retval & BMSR_ANEGCOMPLETE);
 }
 EXPORT_SYMBOL(genphy_aneg_done);

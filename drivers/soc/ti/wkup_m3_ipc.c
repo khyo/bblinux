@@ -436,7 +436,7 @@ static int wkup_m3_ipc_probe(struct platform_device *pdev)
 
 	m3_rproc = rproc_get_by_phandle(rproc_phandle);
 	if (!m3_rproc) {
-		dev_err(&pdev->dev, "could not get rproc handle\n");
+		dev_info(&pdev->dev, "could not get rproc handle\n");
 		ret = -EPROBE_DEFER;
 		goto err_free_mbox;
 	}

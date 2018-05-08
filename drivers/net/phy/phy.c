@@ -894,7 +894,6 @@ void phy_state_machine(struct work_struct *work)
 	if (phydev->drv && phydev->drv->link_change_notify)
 		phydev->drv->link_change_notify(phydev);
 
-	printk("phy statemachine: %u\n", phydev->state);
 	switch (phydev->state) {
 	case PHY_DOWN:
 	case PHY_STARTING:
@@ -913,11 +912,11 @@ void phy_state_machine(struct work_struct *work)
 			break;
 
 		/* If the link is down, give up on negotiation for now */
-//		if (!phydev->link) {
-//			phydev->state = PHY_NOLINK;
-//			phy_link_down(phydev, true);
-//			break;
-//		}
+		/* if (!phydev->link) {
+			phydev->state = PHY_NOLINK;
+			phy_link_down(phydev, true);
+			break;
+		} */
 
 		/* Check if negotiation is done.  Break if there's an error */
 		err = phy_aneg_done(phydev);
@@ -1078,7 +1077,7 @@ void phy_state_machine(struct work_struct *work)
 	 */
 	if (phydev->irq == PHY_POLL)
 		queue_delayed_work(system_power_efficient_wq, &phydev->state_queue,
-				   PHY_STATE_TIME * HZ * 3);
+				   PHY_STATE_TIME * HZ);
 }
 
 /**

@@ -757,7 +757,7 @@ static int __init dmi_init(void)
 	kobject_del(tables_kobj);
 	kobject_put(tables_kobj);
  err:
-	pr_err("dmi: Firmware registration failed.\n");
+	pr_info("dmi: Firmware registration failed.\n");
 
 	return ret;
 }
