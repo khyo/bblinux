@@ -68,6 +68,7 @@ static irqreturn_t tps6521x_pb_irq(int irq, void *_pwr)
 	int error;
 
 	error = regmap_read(pwr->regmap, tps_data->reg_status, &reg);
+	printk("tps6521x_pb_irq reg_status: %u", reg);
 	if (error) {
 		dev_err(pwr->dev, "can't read register: %d\n", error);
 		goto out;
