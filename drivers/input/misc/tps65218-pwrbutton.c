@@ -27,6 +27,9 @@
 #include <linux/regmap.h>
 #include <linux/slab.h>
 
+#include <linux/kobject.h>    // Using kobjects for the sysfs bindings
+
+
 struct tps6521x_data {
 	unsigned int reg_status;
 	unsigned int pb_mask;
@@ -60,6 +63,12 @@ static const struct of_device_id of_tps6521x_pb_match[] = {
 };
 MODULE_DEVICE_TABLE(of, of_tps6521x_pb_match);
 
+int    haltsignal = 0;
+struct kobject *haltsignal_kobj;
+EXPORT_SYMBOL(haltsignal);
+EXPORT_SYMBOL(haltsignal_kobj);
+
+
 static irqreturn_t tps6521x_pb_irq(int irq, void *_pwr)
 {
 	struct tps6521x_pwrbutton *pwr = _pwr;
@@ -77,6 +86,8 @@ static irqreturn_t tps6521x_pb_irq(int irq, void *_pwr)
 	if (reg & tps_data->pb_mask) {
 		input_report_key(pwr->idev, KEY_POWER, 1);
 		pm_wakeup_event(pwr->dev, 0);
+		haltsignal = 2;
+		sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
 	} else {
 		input_report_key(pwr->idev, KEY_POWER, 0);
 	}

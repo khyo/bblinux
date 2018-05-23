@@ -33,6 +33,55 @@
 #include <linux/mfd/core.h>
 #include <linux/mfd/tps65217.h>
 
+
+////// Kyle Howen's Userspace Pollable Halt Signal
+#include <linux/kobject.h>    // Using kobjects for the sysfs bindings
+
+extern int    haltsignal;            ///< For information, store the number of button presses
+extern struct kobject* haltsignal_kobj;
+
+static ssize_t haltsignal_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+   int retval = sprintf(buf, "%d\n", haltsignal);
+   haltsignal = 0;
+   return retval;
+}
+
+static ssize_t haltsignal_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                   const char *buf, size_t count){
+   sscanf(buf, "%du", &haltsignal);
+   // sysfs_notify(kobj, NULL, attr->attr.name);
+   sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
+   return count;
+}
+
+static struct kobj_attribute haltsignal_attr_obj = __ATTR(haltsignal,  S_IWUSR | S_IRUGO, haltsignal_show, haltsignal_store);
+
+static int haltsignal_init(void) {
+   int result = 0;
+
+   // create the kobject sysfs entry at /sys/ebb -- probably not an ideal location!
+   haltsignal_kobj = kobject_create_and_add("halt", kernel_kobj); // kernel_kobj points to /sys/kernel
+   if(!haltsignal_kobj){
+      printk(KERN_ALERT "Halt Signal: failed to create kobject\n");
+      return -ENOMEM;
+   }
+   // add the attributes to /sys/ebb/ -- for example, /sys/ebb/gpio115/numberPresses
+   result = sysfs_create_file(haltsignal_kobj, &haltsignal_attr_obj.attr);
+   if(result) {
+      printk(KERN_ALERT "Halt Signal: failed to create sysfs group\n");
+      kobject_put(haltsignal_kobj);                          // clean up -- remove the kobject sysfs entry
+      return result;
+   }
+
+   return result;
+}
+
+static void haltsignal_exit(void) {
+   kobject_put(haltsignal_kobj);  // clean up -- remove the kobject sysfs entry
+}
+////// END Kyle Howen's Userspace Pollable Halt Signal
+
+
 static struct resource charger_resources[] = {
 	DEFINE_RES_IRQ_NAMED(TPS65217_IRQ_AC, "AC"),
 	DEFINE_RES_IRQ_NAMED(TPS65217_IRQ_USB, "USB"),
@@ -113,6 +162,7 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 {
 	struct tps65217 *tps = data;
 	unsigned int status;
+	unsigned int statusval = 0;
 	bool handled = false;
 	int i;
 	int ret;
@@ -123,6 +173,14 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 			ret);
 		return IRQ_NONE;
 	}
+
+	ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
+	if (ret || (statusval & 0xC) == 0) {
+	    haltsignal = 1;
+        sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
+        printk(KERN_ALERT "Halt Signal: PMIC Interrupt");
+        return IRQ_HANDLED;
+    }
 
 	for (i = 0; i < TPS65217_NUM_IRQ; i++) {
 		if (status & BIT(i)) {
@@ -326,6 +384,8 @@ static int tps65217_probe(struct i2c_client *client,
 	bool status_off = false;
 	int ret;
 
+	haltsignal_init();
+
 	if (client->dev.of_node) {
 		match = of_match_device(tps65217_of_match, &client->dev);
 		if (!match) {
@@ -405,6 +465,8 @@ static int tps65217_remove(struct i2c_client *client)
 	struct tps65217 *tps = i2c_get_clientdata(client);
 	unsigned int virq;
 	int i;
+
+	haltsignal_exit();
 
 	for (i = 0; i < TPS65217_NUM_IRQ; i++) {
 		virq = irq_find_mapping(tps->irq_domain, i);
