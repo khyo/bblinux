@@ -301,7 +301,7 @@ static void txstate(struct musb *musb, struct musb_request *req)
 		request_size = min_t(size_t, request->length - request->actual,
 					musb_ep->dma->max_len);
 
-		use_dma = (request->dma != DMA_ADDR_INVALID && request_size);
+		use_dma = (request->dma != DMA_ADDR_INVALID && request_size > 8);
 
 		/* MUSB_TXCSR_P_ISO is still set correctly */
 
