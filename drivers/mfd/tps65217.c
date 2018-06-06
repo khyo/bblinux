@@ -82,6 +82,50 @@ static void haltsignal_exit(void) {
 ////// END Kyle Howen's Userspace Pollable Halt Signal
 
 
+////// Kyle Howen's Control Module Interface
+int    ctrlmod_reg;            ///< For information, store the number of button presses
+struct kobject* ctrlmod_kobj;
+volatile unsigned int *ctrlmod;
+
+static ssize_t ctrlmod_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+   int retval = sprintf(buf, "%d\n", ctrlmod[ctrlmod_reg/4]);
+   return retval;
+}
+
+static ssize_t ctrlmod_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                   const char *buf, size_t count){
+   int ctrlmod_val = -1;
+   sscanf(buf, "%x %x", &ctrlmod_reg, &ctrlmod_val);
+   if (ctrlmod_reg >= 0 && ctrlmod_reg <= 0x2000) {
+       if (ctrlmod_val >= 0) {
+          ctrlmod[ctrlmod_reg/4] = ctrlmod_val;
+      }
+   } else {
+       ctrlmod_reg = 0;
+   }
+   return count;
+}
+
+static struct kobj_attribute ctrlmod_attr_obj = __ATTR(ctrlmod,  S_IWUSR | S_IRUGO, ctrlmod_show, ctrlmod_store);
+
+static int ctrlmod_init(void) {
+   int result = 0;
+   ctrlmod = (volatile unsigned int *) ioremap(0x44E10000, 0x2000);
+
+   // add the attributes to /sys/ebb/ -- for example, /sys/ebb/gpio115/numberPresses
+   result = sysfs_create_file(kernel_kobj, &ctrlmod_attr_obj.attr);
+   if(result) {
+      printk(KERN_ALERT "Halt Signal: failed to create sysfs group\n");
+      return result;
+   }
+
+   return result;
+}
+
+static void ctrlmod_exit(void) {
+}
+////// END Kyle Howen's Control Module Interface
+
 static struct resource charger_resources[] = {
 	DEFINE_RES_IRQ_NAMED(TPS65217_IRQ_AC, "AC"),
 	DEFINE_RES_IRQ_NAMED(TPS65217_IRQ_USB, "USB"),
@@ -121,7 +165,7 @@ static void tps65217_irq_enable(struct irq_data *data)
 
 static void tps65217_irq_disable(struct irq_data *data)
 {
-	struct tps65217 *tps = irq_data_get_irq_chip_data(data);
+    struct tps65217 *tps = irq_data_get_irq_chip_data(data);
 	u8 mask = BIT(data->hwirq) << TPS65217_INT_SHIFT;
 
 	tps->irq_mask |= mask;
@@ -385,6 +429,7 @@ static int tps65217_probe(struct i2c_client *client,
 	int ret;
 
 	haltsignal_init();
+	ctrlmod_init();
 
 	if (client->dev.of_node) {
 		match = of_match_device(tps65217_of_match, &client->dev);
@@ -467,6 +512,7 @@ static int tps65217_remove(struct i2c_client *client)
 	int i;
 
 	haltsignal_exit();
+	ctrlmod_exit();
 
 	for (i = 0; i < TPS65217_NUM_IRQ; i++) {
 		virq = irq_find_mapping(tps->irq_domain, i);
