@@ -88,7 +88,7 @@ struct kobject* ctrlmod_kobj;
 volatile unsigned int *ctrlmod;
 
 static ssize_t ctrlmod_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
-   int retval = sprintf(buf, "%d\n", ctrlmod[ctrlmod_reg/4]);
+   int retval = sprintf(buf, "%x\n", ctrlmod[ctrlmod_reg/4]);
    return retval;
 }
 
