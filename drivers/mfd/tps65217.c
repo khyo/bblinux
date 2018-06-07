@@ -29,6 +29,7 @@
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
 
 #include <linux/mfd/core.h>
 #include <linux/mfd/tps65217.h>
@@ -222,7 +223,11 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 	if (ret || (statusval & 0xC) == 0) {
 	    haltsignal = 1;
         sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
-        printk(KERN_ALERT "Halt Signal: PMIC Interrupt");
+        printk(KERN_ALERT "Halt Signal: PMIC Interrupt, waiting for power...");
+        while (ret || (statusval & 0xC) == 0) {
+            mdelay(500);
+            ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
+        }
         return IRQ_HANDLED;
     }
 
