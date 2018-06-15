@@ -220,14 +220,16 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 	}
 
 	ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
+	// printk(KERN_ALERT "TPS IRQ: int %X, status %X, ret %X", status, statusval, ret);
 	if (ret || (statusval & 0xC) == 0) {
 	    haltsignal = 1;
         sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
-        printk(KERN_ALERT "Halt Signal: PMIC Interrupt, waiting for power...");
-        while (ret || (statusval & 0xC) == 0) {
-            mdelay(500);
+        printk(KERN_ALERT "Halt Signal: int %X, status %X, ret %X, waiting for power...", status, statusval, ret);
+        while (ret || (ret == 0 && (statusval & 0xC) == 0)) {
+            mdelay(4000);
             ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
         }
+        printk(KERN_ALERT "Halt Signal: recovered...");
         return IRQ_HANDLED;
     }
 
@@ -270,9 +272,9 @@ static int tps65217_irq_init(struct tps65217 *tps, int irq)
 	tps->irq = irq;
 
 	/* Mask all interrupt sources */
-	tps->irq_mask = TPS65217_INT_MASK;
+	tps->irq_mask = 0;
 	tps65217_set_bits(tps, TPS65217_REG_INT, TPS65217_INT_MASK,
-			  TPS65217_INT_MASK, TPS65217_PROTECT_NONE);
+			  0, TPS65217_PROTECT_NONE);
 
 	tps->irq_domain = irq_domain_add_linear(tps->dev->of_node,
 		TPS65217_NUM_IRQ, &tps65217_irq_domain_ops, tps);
