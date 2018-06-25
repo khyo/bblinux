@@ -40,6 +40,7 @@
 
 extern int    haltsignal;            ///< For information, store the number of button presses
 extern struct kobject* haltsignal_kobj;
+volatile unsigned int *haltgpio;
 
 static ssize_t haltsignal_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
    int retval = sprintf(buf, "%d\n", haltsignal);
@@ -60,13 +61,15 @@ static struct kobj_attribute haltsignal_attr_obj = __ATTR(haltsignal,  S_IWUSR |
 static int haltsignal_init(void) {
    int result = 0;
 
+   haltgpio = (volatile unsigned int *) ioremap(0x44E07000, 0x1000);
+
    // create the kobject sysfs entry at /sys/ebb -- probably not an ideal location!
    haltsignal_kobj = kobject_create_and_add("halt", kernel_kobj); // kernel_kobj points to /sys/kernel
    if(!haltsignal_kobj){
       printk(KERN_ALERT "Halt Signal: failed to create kobject\n");
       return -ENOMEM;
    }
-   // add the attributes to /sys/ebb/ -- for example, /sys/ebb/gpio115/numberPresses
+
    result = sysfs_create_file(haltsignal_kobj, &haltsignal_attr_obj.attr);
    if(result) {
       printk(KERN_ALERT "Halt Signal: failed to create sysfs group\n");
@@ -113,7 +116,6 @@ static int ctrlmod_init(void) {
    int result = 0;
    ctrlmod = (volatile unsigned int *) ioremap(0x44E10000, 0x2000);
 
-   // add the attributes to /sys/ebb/ -- for example, /sys/ebb/gpio115/numberPresses
    result = sysfs_create_file(kernel_kobj, &ctrlmod_attr_obj.attr);
    if(result) {
       printk(KERN_ALERT "Halt Signal: failed to create sysfs group\n");
@@ -222,13 +224,26 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 	ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
 	// printk(KERN_ALERT "TPS IRQ: int %X, status %X, ret %X", status, statusval, ret);
 	if (ret || (statusval & 0xC) == 0) {
+	    enum {
+	        GPIO_CTRL = 0x130/4,
+            GPIO_OE = 0x134/4,
+            GPIO_DATAIN = 0x138/4,
+            GPIO_DATAOUT = 0x13C/4,
+            GPIO_CLEARDATAOUT = 0x190/4,
+            GPIO_SETDATAOUT = 0x194/4,
+            PIN_nEXT_PWR_ENABLE = 30,
+	    };
+	    haltgpio[GPIO_SETDATAOUT] = PIN_nEXT_PWR_ENABLE;
 	    haltsignal = 1;
         sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
         printk(KERN_ALERT "Halt Signal: int %X, status %X, ret %X, waiting for power...", status, statusval, ret);
+
+
         while (ret || (ret == 0 && (statusval & 0xC) == 0)) {
             mdelay(4000);
             ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
         }
+        haltgpio[GPIO_CLEARDATAOUT] = PIN_nEXT_PWR_ENABLE;
         printk(KERN_ALERT "Halt Signal: recovered...");
         return IRQ_HANDLED;
     }
