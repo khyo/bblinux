@@ -231,7 +231,7 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
             GPIO_DATAOUT = 0x13C/4,
             GPIO_CLEARDATAOUT = 0x190/4,
             GPIO_SETDATAOUT = 0x194/4,
-            PIN_nEXT_PWR_ENABLE = 30,
+            PIN_nEXT_PWR_ENABLE = 1 << 30,
 	    };
 	    haltgpio[GPIO_SETDATAOUT] = PIN_nEXT_PWR_ENABLE;
 	    haltsignal = 1;
