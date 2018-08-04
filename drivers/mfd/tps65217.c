@@ -238,9 +238,10 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
         sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
         printk(KERN_ALERT "Halt Signal: int %X, status %X, ret %X, waiting for power...", status, statusval, ret);
 
-
+        volatile int i = 0;
         while (ret || (ret == 0 && (statusval & 0xC) == 0)) {
-            mdelay(4000);
+            mdelay(10);
+            printk(KERN_ALERT "%d\n", i++);
             ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
         }
         haltgpio[GPIO_CLEARDATAOUT] = PIN_nEXT_PWR_ENABLE;
