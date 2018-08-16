@@ -38,15 +38,49 @@
 ////// Kyle Howen's Userspace Pollable Halt Signal
 #include <linux/kobject.h>    // Using kobjects for the sysfs bindings
 
+
+typedef struct {
+    signed char gpio;
+    signed char idx;
+} Pin;
+
+static struct {
+    volatile unsigned int * gpios[4];
+    int delay;
+    Pin halt;
+    Pin warn;
+    unsigned char warnActiveHigh;
+} halts;
+
+enum {
+    GPIO_CTRL = 0x130/4,
+    GPIO_OE = 0x134/4,
+    GPIO_DATAIN = 0x138/4,
+    GPIO_DATAOUT = 0x13C/4,
+    GPIO_CLEARDATAOUT = 0x190/4,
+    GPIO_SETDATAOUT = 0x194/4,
+};
+
+static void pin_cmd(Pin* pin, int state) {
+    volatile unsigned int * gpio;
+
+    if(pin->gpio < 0 || pin->gpio > 3 || pin->idx < 0 || pin->idx > 31) {
+        return;
+    }
+    gpio = halts.gpios[pin->gpio];
+    if (!gpio) {
+        return;
+    }
+
+    if (state) {
+        gpio[GPIO_SETDATAOUT] = 1 << pin->idx;
+    } else {
+        gpio[GPIO_CLEARDATAOUT] = 1 << pin->idx;
+    }
+}
+
 extern int    haltsignal;            ///< For information, store the number of button presses
 extern struct kobject* haltsignal_kobj;
-volatile unsigned int *haltgpio;
-
-static ssize_t haltsignal_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
-   int retval = sprintf(buf, "%d\n", haltsignal);
-   haltsignal = 0;
-   return retval;
-}
 
 static ssize_t haltsignal_store(struct kobject *kobj, struct kobj_attribute *attr,
                                    const char *buf, size_t count){
@@ -56,12 +90,42 @@ static ssize_t haltsignal_store(struct kobject *kobj, struct kobj_attribute *att
    return count;
 }
 
+static ssize_t haltsignal_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+   int retval = sprintf(buf, "%d\n", haltsignal);
+   haltsignal = 0;
+   return retval;
+}
+
 static struct kobj_attribute haltsignal_attr_obj = __ATTR(haltsignal,  S_IWUSR | S_IRUGO, haltsignal_show, haltsignal_store);
+
+static ssize_t haltconfig_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+   int retval = sprintf(buf, "%hhd %hhd %hhd %hhd %hhu %d\n",
+                        halts.halt.gpio, halts.halt.idx, halts.warn.gpio, halts.warn.idx, halts.warnActiveHigh, halts.delay);
+   return retval;
+}
+
+static ssize_t haltconfig_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                   const char *buf, size_t count){
+   sscanf(buf, "%hhd %hhd %hhd %hhd %hhu %d",
+          &halts.halt.gpio, &halts.halt.idx, &halts.warn.gpio, &halts.warn.idx, &halts.warnActiveHigh, &halts.delay);
+   return count;
+}
+
+static struct kobj_attribute haltconfig_attr_obj = __ATTR(haltconfig,  S_IWUSR | S_IRUGO, haltconfig_show, haltconfig_store);
 
 static int haltsignal_init(void) {
    int result = 0;
 
-   haltgpio = (volatile unsigned int *) ioremap(0x44E07000, 0x1000);
+   halts.gpios[0] = (volatile unsigned int *) ioremap(0x44E07000, 0x400);
+   halts.gpios[1] = (volatile unsigned int *) ioremap(0x4804C000, 0x400);
+   halts.gpios[2] = (volatile unsigned int *) ioremap(0x481AC000, 0x400);
+   halts.gpios[3] = (volatile unsigned int *) ioremap(0x481AE000, 0x400);
+   halts.delay = 300;
+   halts.halt.gpio = 0;
+   halts.halt.idx = 30;  // PIN_nEXT_PWR_ENABLE = 1 << 30;
+   halts.warn.gpio = -1;
+   halts.warn.idx = -1;
+   halts.warnActiveHigh = 1;
 
    // create the kobject sysfs entry at /sys/ebb -- probably not an ideal location!
    haltsignal_kobj = kobject_create_and_add("halt", kernel_kobj); // kernel_kobj points to /sys/kernel
@@ -75,6 +139,13 @@ static int haltsignal_init(void) {
       printk(KERN_ALERT "Halt Signal: failed to create sysfs group\n");
       kobject_put(haltsignal_kobj);                          // clean up -- remove the kobject sysfs entry
       return result;
+   }
+
+   result = sysfs_create_file(haltsignal_kobj, &haltconfig_attr_obj.attr);
+   if(result) {
+     printk(KERN_ALERT "Halt Config: failed to create sysfs group\n");
+     kobject_put(haltsignal_kobj);                          // clean up -- remove the kobject sysfs entry
+     return result;
    }
 
    return result;
@@ -97,7 +168,7 @@ static ssize_t ctrlmod_show(struct kobject *kobj, struct kobj_attribute *attr, c
 }
 
 static ssize_t ctrlmod_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                   const char *buf, size_t count){
+                             const char *buf, size_t count){
    int ctrlmod_val = -1;
    sscanf(buf, "%x %x", &ctrlmod_reg, &ctrlmod_val);
    if (ctrlmod_reg >= 0 && ctrlmod_reg <= 0x2000) {
@@ -224,26 +295,20 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 	ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
 	// printk(KERN_ALERT "TPS IRQ: int %X, status %X, ret %X", status, statusval, ret);
 	if (ret || (statusval & 0xC) == 0) {
-	    enum {
-	        GPIO_CTRL = 0x130/4,
-            GPIO_OE = 0x134/4,
-            GPIO_DATAIN = 0x138/4,
-            GPIO_DATAOUT = 0x13C/4,
-            GPIO_CLEARDATAOUT = 0x190/4,
-            GPIO_SETDATAOUT = 0x194/4,
-            PIN_nEXT_PWR_ENABLE = 1 << 30,
-	    };
-	    haltgpio[GPIO_SETDATAOUT] = PIN_nEXT_PWR_ENABLE;
 	    haltsignal = 1;
-        sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
+	    pin_cmd(&halts.warn, halts.warnActiveHigh);
+	    sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
         printk(KERN_ALERT "Halt Signal: int %X, status %X, ret %X, waiting for power...", status, statusval, ret);
-
-
+        mdelay(halts.delay);
+        printk(KERN_ALERT "Halt: Ext Power Off");
+        ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
         while (ret || (ret == 0 && (statusval & 0xC) == 0)) {
-            mdelay(4000);
+            pin_cmd(&halts.halt, 1);
+            mdelay(10);
             ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
         }
-        haltgpio[GPIO_CLEARDATAOUT] = PIN_nEXT_PWR_ENABLE;
+        pin_cmd(&halts.halt, 0);
+        pin_cmd(&halts.warn, !halts.warnActiveHigh);
         printk(KERN_ALERT "Halt Signal: recovered...");
         return IRQ_HANDLED;
     }
