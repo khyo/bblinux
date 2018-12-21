@@ -1,0 +1,69 @@
+#include <dt-bindings/board/am335x-bbw-bbb-base.h>
+
+&am33xx_pinmux {
+  i2c1_pins: pinmux_i2c1_pins {
+    pinctrl-single,pins = <
+      0x158 0x32 0x15c 0x32
+    >;
+  };
+
+  stcr_pwm0_pins: pinmux_stcr_pwm0_pins {
+    pinctrl-single,pins = <
+      /* AM33XX_IOPAD(0x950, INPUT_EN | MUX_MODE7) */
+      BONE_P9_31 (PIN_OUTPUT | MUX_MODE0)	/* RGB Red LED */
+    >;
+  };
+
+  stcr_pwm1_pins: pinmux_stcr_pwm1_pins {
+    pinctrl-single,pins = <
+      BONE_P9_14 (PIN_OUTPUT | MUX_MODE6)	/* RGB Red LED */
+    >;
+  };
+
+  stcr_pwm2_pins: pinmux_stcr_pwm2_pins {
+    pinctrl-single,pins = <
+      BONE_P8_19 (PIN_OUTPUT | MUX_MODE4)	/* RGB Red LED */
+    >;
+  };
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+	clock-frequency = <0xEA60>; /*<0x186a0>;*/
+};
+
+&i2c2 {
+  clock-frequency = <0xEA60>; /*<0x186a0>;*/
+};
+
+&epwmss0 {
+  status = "okay";
+};
+
+&ehrpwm0 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&stcr_pwm0_pins>;
+};
+
+&epwmss1 {
+  status = "okay";
+};
+
+&ehrpwm1 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&stcr_pwm1_pins>;
+};
+
+&epwmss2 {
+  status = "okay";
+};
+
+&ehrpwm2 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&stcr_pwm2_pins>;
+};
