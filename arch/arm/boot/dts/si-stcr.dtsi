@@ -10,7 +10,7 @@
   stcr_pwm0_pins: pinmux_stcr_pwm0_pins {
     pinctrl-single,pins = <
       /* AM33XX_IOPAD(0x950, INPUT_EN | MUX_MODE7) */
-      BONE_P9_31 (PIN_OUTPUT | MUX_MODE0)	/* RGB Red LED */
+      BONE_P9_31 (PIN_OUTPUT | MUX_MODE1)	/* RGB Red LED */
     >;
   };
 
