@@ -295,23 +295,26 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 	ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
 	// printk(KERN_ALERT "TPS IRQ: int %X, status %X, ret %X", status, statusval, ret);
 	if (ret || (statusval & 0xC) == 0) {
-	    haltsignal = 1;
-	    pin_cmd(&halts.warn, halts.warnActiveHigh);
-	    sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
-        printk(KERN_ALERT "Halt Signal: int %X, status %X, ret %X, waiting for power...", status, statusval, ret);
-        mdelay(halts.delay);
-        printk(KERN_ALERT "Halt: Ext Power Off");
-        ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
-        while (ret || (ret == 0 && (statusval & 0xC) == 0)) {
-            pin_cmd(&halts.halt, 1);
-            mdelay(10);
-            ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
-        }
-        pin_cmd(&halts.halt, 0);
-        pin_cmd(&halts.warn, !halts.warnActiveHigh);
-        printk(KERN_ALERT "Halt Signal: recovered...");
-        return IRQ_HANDLED;
-    }
+		haltsignal = 1;
+		pin_cmd(&halts.warn, halts.warnActiveHigh);
+		sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
+		printk(KERN_ALERT "Halt Signal: int %X, status %X, ret %X, waiting for power...", status, statusval, ret);
+		mdelay(halts.delay);
+		printk(KERN_ALERT "Halt: Ext Power Off");
+		ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
+		while (ret || (ret == 0 && (statusval & 0xC) == 0)) {
+				pin_cmd(&halts.halt, 1);
+				mdelay(10);
+				ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
+		}
+		pin_cmd(&halts.halt, 0);
+		pin_cmd(&halts.warn, !halts.warnActiveHigh);
+		printk(KERN_ALERT "Halt Signal: recovered...");
+		return IRQ_HANDLED;
+	} else {
+		haltsignal = 4 | ((statusval & 0xFF) << 8) | ((status & 0xFF) << 16);
+		sysfs_notify(haltsignal_kobj, NULL, "haltsignal");
+	}
 
 	for (i = 0; i < TPS65217_NUM_IRQ; i++) {
 		if (status & BIT(i)) {
