@@ -38,6 +38,11 @@
   clock-frequency = <0xEA60>; /*<0x186a0>;*/
 };
 
+&cape_eeprom0 { status = "disabled"; };
+&cape_eeprom1 { status = "disabled"; };
+&cape_eeprom2 { status = "disabled"; };
+&cape_eeprom3 { status = "disabled"; };
+
 &epwmss0 {
   status = "okay";
 };
