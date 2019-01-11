@@ -1,4 +1,19 @@
-#include <dt-bindings/board/am335x-bbw-bbb-base.h>
+/*
+ * Copyright (C) Subinitial LLC
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+
+#include "am33xx.dtsi"
+#include "am335x-bone-common.dtsi"
+#include "am335x-bonegreen-common.dtsi"
+/* #include "am335x-bone-jtag.dtsi" */
+
+#include "am335x-bonecore-common.dtsi"
+
 
 &am33xx_pinmux {
   i2c1_pins: pinmux_i2c1_pins {
@@ -9,7 +24,6 @@
 
   stcr_pwm0_pins: pinmux_stcr_pwm0_pins {
     pinctrl-single,pins = <
-      /* AM33XX_IOPAD(0x950, INPUT_EN | MUX_MODE7) */
       BONE_P9_31 (PIN_OUTPUT | MUX_MODE1)	/* RGB Red LED */
     >;
   };
@@ -25,6 +39,26 @@
       BONE_P8_19 (PIN_OUTPUT | MUX_MODE4)	/* RGB Red LED */
     >;
   };
+
+  stcr_gpio_pins: pinmux_stcr_gpio_pins {
+    pinctrl-single,pins = <
+      BONE_P9_15 (PIN_INPUT | MUX_MODE7)
+      BONE_P9_16 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)
+    >;
+  };
+};
+
+&capeuniversal {
+  P9_15 {
+    gpio-name = "n5voutlimit";
+    gpio = <&gpio1 16 0>;
+    input; dir-changeable;
+  };
+  P9_16 {
+    gpio-name = "eepromwp";
+    gpio = <&gpio1 19 0>;
+    output; init-low; dir-changeable;
+  };
 };
 
 &i2c1 {
@@ -37,11 +71,6 @@
 &i2c2 {
   clock-frequency = <0xEA60>; /*<0x186a0>;*/
 };
-
-&cape_eeprom0 { status = "disabled"; };
-&cape_eeprom1 { status = "disabled"; };
-&cape_eeprom2 { status = "disabled"; };
-&cape_eeprom3 { status = "disabled"; };
 
 &epwmss0 {
   status = "okay";
@@ -71,4 +100,10 @@
   status = "okay";
   pinctrl-names = "default";
   pinctrl-0 = <&stcr_pwm2_pins>;
+};
+
+
+/ {
+	model = "TI AM335x Bonecore STCR";
+	compatible = "ti,am335x-bone-green", "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
 };

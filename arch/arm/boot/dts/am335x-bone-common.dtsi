@@ -515,7 +515,7 @@
 	};
 
 
-	cape-universal {
+	capeuniversal: cape-universal {
 		compatible = "gpio-of-helper";
 		status = "okay";
 		pinctrl-names = "default";

@@ -1,0 +1,58 @@
+#include <dt-bindings/board/am335x-bbw-bbb-base.h>
+
+&am33xx_pinmux {
+
+  bonecore_pins: pinmux_bonecore_pins {
+    pinctrl-single,pins = <
+      /* AM33XX_IOPAD(0x9b0, PIN_OUTPUT_PULLDOWN | MUX_MODE3) */  /* Example */
+      /* BONE_P9_10 (PIN_OUTPUT_PULLUP | MUX_MODE7) */  /* core_sysphyreset */
+      BONE_P9_11 (PIN_OUTPUT_PULLUP | MUX_MODE7)	 /* nEXT Power Enable GPIO */
+      BONE_P9_12 (PIN_INPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
+      BONE_P9_13 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* network reset */
+      BONE_P9_41A (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* core_capprechargeA */
+      BONE_P9_41B (PIN_INPUT | MUX_MODE7)  /* core_capprechargeB */
+    >;
+  };
+};
+
+&capeuniversal {
+  P9_11 {
+    gpio-name = "nextpwren";
+    gpio = <&gpio0 30 0>;
+    output; init-high; dir-changeable;
+  };
+  P9_12 {
+    gpio-name = "nphyresetcmd";
+    gpio = <&gpio1 28 0>;
+    input; dir-changeable;
+  };
+  P9_13 {
+    gpio-name = "nnetreset";
+    gpio = <&gpio0 31 0>;
+    output; init-high; dir-changeable;
+  };
+  P9_41A {
+    gpio-name = "capprechargea";
+    gpio = <&gpio0 20 0>;
+    output; init-high; dir-changeable;
+  };
+  P9_41B {
+    gpio-name = "capprechargeb";
+    gpio = <&gpio3 20 0>;
+    input; dir-changeable;
+  };
+};
+
+&i2c2 {
+  rtc1: rtc1@68 {
+    compatible = "dallas,ds1307";
+    reg = <0x68>;
+  };
+};
+
+&cape_eeprom0 { status = "disabled"; };
+&cape_eeprom1 { status = "disabled"; };
+&cape_eeprom2 { status = "disabled"; };
+&cape_eeprom3 { status = "disabled"; };
+
+&rtc { status = "disabled"; };

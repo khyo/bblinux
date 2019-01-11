@@ -634,7 +634,8 @@ dtb-$(CONFIG_SOC_AM33XX) += \
 	am335x-boneblack-wireless.dtb \
 	am335x-boneblue.dtb \
 	am335x-bonegreen.dtb \
-	am335x-bonegreen-stcr.dtb \
+	am335x-bonecore.dtb \
+	am335x-bonecore-stcr.dtb \
 	am335x-bonegreen-wireless.dtb \
 	am335x-chiliboard.dtb \
 	am335x-cm-t335.dtb \

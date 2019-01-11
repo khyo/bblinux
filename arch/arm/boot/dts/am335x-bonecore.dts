@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) Subinitial LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -11,9 +11,11 @@
 #include "am335x-bone-common.dtsi"
 #include "am335x-bonegreen-common.dtsi"
 /* #include "am335x-bone-jtag.dtsi" */
-#include "si-stcr.dtsi"
- 
+
+#include "am335x-bonecore-common.dtsi"
+
+
 / {
-	model = "TI AM335x BeagleBone Green";
+	model = "TI AM335x Bonecore";
 	compatible = "ti,am335x-bone-green", "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
 };
