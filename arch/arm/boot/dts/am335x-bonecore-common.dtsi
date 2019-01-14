@@ -9,7 +9,7 @@
       BONE_P9_11 (PIN_OUTPUT_PULLUP | MUX_MODE7)	 /* nEXT Power Enable GPIO */
       BONE_P9_12 (PIN_INPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
       BONE_P9_13 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* network reset */
-      BONE_P9_41A (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* core_capprechargeA */
+      BONE_P9_41A (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  /* core_capprechargeA */
       BONE_P9_41B (PIN_INPUT | MUX_MODE7)  /* core_capprechargeB */
     >;
   };
@@ -34,7 +34,7 @@
   P9_41A {
     gpio-name = "capprechargea";
     gpio = <&gpio0 20 0>;
-    output; init-high; dir-changeable;
+    output; init-low; dir-changeable;
   };
   P9_41B {
     gpio-name = "capprechargeb";
