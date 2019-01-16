@@ -303,8 +303,8 @@ static irqreturn_t tps65217_irq_thread(int irq, void *data)
 		printk(KERN_ALERT "Halt: Ext Power Off");
 		ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
 		while (ret || (ret == 0 && (statusval & 0xC) == 0)) {
-				pin_cmd(&halts.halt, 1);
-				mdelay(10);
+				pin_cmd(&halts.halt, 1);  // Beaglebone should die IMMEDIATALY after this pin goes high
+				mdelay(10); // This delay will virtually new complete...
 				ret = tps65217_reg_read(tps, TPS65217_REG_STATUS, &statusval);
 		}
 		pin_cmd(&halts.halt, 0);
