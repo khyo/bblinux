@@ -122,7 +122,7 @@ static int haltsignal_init(void) {
    halts.gpios[3] = (volatile unsigned int *) ioremap(0x481AE000, 0x400);
    halts.delay = 300;
    halts.halt.gpio = 0;
-   halts.halt.idx = 30;  // PIN_nEXT_PWR_ENABLE = 1 << 30;
+   halts.halt.idx = 10;  // PIN_nEXT_PWR_ENABLE
    halts.warn.gpio = -1;
    halts.warn.idx = -1;
    halts.warnActiveHigh = 1;

@@ -1,44 +1,43 @@
 #include <dt-bindings/board/am335x-bbw-bbb-base.h>
 
 &am33xx_pinmux {
-
   bonecore_pins: pinmux_bonecore_pins {
     pinctrl-single,pins = <
       /* AM33XX_IOPAD(0x9b0, PIN_OUTPUT_PULLDOWN | MUX_MODE3) */  /* Example */
+      BONE_P8_26 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* network reset */
+      BONE_P8_31 (PIN_OUTPUT_PULLUP | MUX_MODE7)	 /* nEXT Power Enable GPIO */
+      BONE_P8_32 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  /* core_capprechargeA */
       /* BONE_P9_10 (PIN_OUTPUT_PULLUP | MUX_MODE7) */  /* core_sysphyreset */
-      BONE_P9_11 (PIN_OUTPUT_PULLUP | MUX_MODE7)	 /* nEXT Power Enable GPIO */
       BONE_P9_12 (PIN_INPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
-      BONE_P9_13 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* network reset */
-      BONE_P9_41A (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  /* core_capprechargeA */
-      BONE_P9_41B (PIN_INPUT | MUX_MODE7)  /* core_capprechargeB */
+      BONE_P9_15 (PIN_INPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
     >;
   };
 };
 
 &capeuniversal {
-  P9_11 {
-    gpio-name = "nextpwren";
-    gpio = <&gpio0 30 0>;
+  P8_26 {
+    gpio-name = "nnetreset";
+    gpio = <&gpio1 29 0>;
     output; init-high; dir-changeable;
+  };
+  P8_31 {
+    gpio-name = "nextpwren";
+    gpio = <&gpio0 10 0>;
+    output; init-high; dir-changeable;
+  };
+  P8_32 {
+    gpio-name = "capprechargea";
+    gpio = <&gpio0 11 0>;
+    output; init-low; dir-changeable;
   };
   P9_12 {
     gpio-name = "nphyresetcmd";
     gpio = <&gpio1 28 0>;
     input; dir-changeable;
   };
-  P9_13 {
-    gpio-name = "nnetreset";
-    gpio = <&gpio0 31 0>;
-    output; init-high; dir-changeable;
-  };
-  P9_41A {
-    gpio-name = "capprechargea";
-    gpio = <&gpio0 20 0>;
-    output; init-low; dir-changeable;
-  };
-  P9_41B {
-    gpio-name = "capprechargeb";
-    gpio = <&gpio3 20 0>;
+  P9_15 {
+    gpio-name = "nsys5voutilimit";
+    gpio = <&gpio1 16 0>;
     input; dir-changeable;
   };
 };

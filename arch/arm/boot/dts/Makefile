@@ -636,6 +636,7 @@ dtb-$(CONFIG_SOC_AM33XX) += \
 	am335x-bonegreen.dtb \
 	am335x-bonecore.dtb \
 	am335x-bonecore-stcr.dtb \
+	am335x-bonecore-ripbat.dtb \
 	am335x-bonecore-wifitestbed.dtb \
 	am335x-bonegreen-wireless.dtb \
 	am335x-chiliboard.dtb \
