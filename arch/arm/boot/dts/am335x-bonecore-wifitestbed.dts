@@ -10,6 +10,7 @@
 #include "am33xx.dtsi"
 #include "am335x-bone-common.dtsi"
 #include "am335x-bonegreen-common.dtsi"
+// #include "am335x-pruss-rproc.dtsi"
 /* #include "am335x-bone-jtag.dtsi" */
 
 #include "am335x-bonecore-common.dtsi"
@@ -27,8 +28,8 @@
 
   bb_uart2_pins: pinmux_bb_uart2_pins {
     pinctrl-single,pins = <
-      BONE_P9_21 (PIN_OUTPUT | MUX_MODE1)	/* P9_21: spi0_d0.uart2_txd */
-      BONE_P9_22 (PIN_INPUT  | MUX_MODE1)	/* P9_22: spi0_sclk.uart2_rxd */
+      // BONE_P9_21 (PIN_OUTPUT | MUX_MODE1)	/* P9_21: spi0_d0.uart2_txd */
+      // BONE_P9_22 (PIN_INPUT  | MUX_MODE1)	/* P9_22: spi0_sclk.uart2_rxd */
     //	BONE_P8_38 (PIN_OUTPUT | MUX_MODE6)	// lcd_data9.uart2_rtsn
     //	BONE_P8_37 (PIN_INPUT  | MUX_MODE6)	// lcd_data8.uart2_ctsn
     >;
@@ -38,6 +39,25 @@
     pinctrl-single,pins = <
       BONE_P9_13 (PIN_OUTPUT | MUX_MODE6)	// gpmc_wpn.uart4_txd_mux2
       BONE_P9_11 (PIN_INPUT  | MUX_MODE6)	// gpmc_wait0.uart4_rxd_mux2
+    >;
+  };
+
+  bb_spi0_pins: pinmux_bb_spi0_pins {
+    pinctrl-single,pins = <
+      BONE_P9_21 (PIN_INPUT_PULLUP  | MUX_MODE0)  // spi0_d0 MISO
+      BONE_P9_18 (PIN_OUTPUT_PULLDOWN  | MUX_MODE0)  // spi0_d1 MOSI
+      BONE_P9_17 (PIN_OUTPUT_PULLUP | MUX_MODE0)  // spi0_cs0
+      BONE_P9_22 (PIN_OUTPUT_PULLUP  | MUX_MODE0)  // spi0_sclk
+    >;
+  };
+
+  bb_spi1_pins: pinmux_bb_spi1_pins {
+    pinctrl-single,pins = <
+      BONE_P9_27 (PIN_INPUT_PULLDOWN | MUX_MODE7)  // adc_drdy
+      BONE_P9_28 (PIN_OUTPUT_PULLUP | MUX_MODE3)  // spi1_cs0
+      BONE_P9_29 (PIN_INPUT_PULLUP  | MUX_MODE3)  // spi1_d0 MISO
+      BONE_P9_30 (PIN_OUTPUT_PULLDOWN  | MUX_MODE3)  // spi1_d1 MOSI
+      BONE_P9_31 (PIN_OUTPUT_PULLUP  | MUX_MODE3)  // spi1_sclk
     >;
   };
 };
@@ -52,6 +72,12 @@
     gpio-name = "microCTS";
     gpio = <&gpio0 12 0>;
     output; init-low; dir-changeable;
+  };
+  
+  P9_27 {
+    gpio-name = "adc_drdy";
+    gpio = <&gpio3 19 0>;
+    input; dir-changeable;
   };
 };
 
@@ -71,6 +97,49 @@
   status = "okay";
   pinctrl-names = "default";
   pinctrl-0 = <&bb_uart4_pins>;
+};
+
+&pruss {
+  status = "okay";
+};
+
+// &spi0 {
+//   status = "okay";
+//   pinctrl-names = "default";
+//   pinctrl-0 = <&bb_spi1_pins>;
+
+//   spidev@1 {
+//     compatible = "linux,spidev";
+//     spi-max-frequency = <24000000>;
+//     reg = <0>;
+//     spi-cpha;
+//   };
+// };
+
+&spi0 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_spi0_pins>;
+
+  spidev@0 {
+    compatible = "linux,spidev";
+    spi-max-frequency = <3800000>;
+    reg = <0>;
+    // spi-cpha;
+  };
+};
+
+&spi1 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_spi1_pins>;
+
+  spidev@0 {
+    compatible = "linux,spidev";
+    spi-max-frequency = <3800000>;
+    reg = <0>;
+    // spi-cpha;
+  };
 };
 
 / {

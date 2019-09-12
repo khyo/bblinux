@@ -481,38 +481,38 @@
 
 &ocp {
 	/* P9_19 (ZCZ ball D17) i2c */
-	P9_19_pinmux {
-		compatible = "bone-pinmux-helper";
-		status = "okay";
-		pinctrl-names = "default", "gpio", "gpio_pu", "gpio_pd", "gpio_input", "spi_cs", "can", "i2c", "pru_uart", "timer";
-		pinctrl-0 = <&P9_19_default_pin>;
-		pinctrl-1 = <&P9_19_gpio_pin>;
-		pinctrl-2 = <&P9_19_gpio_pu_pin>;
-		pinctrl-3 = <&P9_19_gpio_pd_pin>;
-		pinctrl-4 = <&P9_19_gpio_input_pin>;
-		pinctrl-5 = <&P9_19_spi_cs_pin>;
-		pinctrl-6 = <&P9_19_can_pin>;
-		pinctrl-7 = <&P9_19_i2c_pin>;
-		pinctrl-8 = <&P9_19_pru_uart_pin>;
-		pinctrl-9 = <&P9_19_timer_pin>;
-	};
+	// P9_19_pinmux {
+	// 	compatible = "bone-pinmux-helper";
+	// 	status = "okay";
+	// 	pinctrl-names = "default", "gpio", "gpio_pu", "gpio_pd", "gpio_input", "spi_cs", "can", "i2c", "pru_uart", "timer";
+	// 	pinctrl-0 = <&P9_19_default_pin>;
+	// 	pinctrl-1 = <&P9_19_gpio_pin>;
+	// 	pinctrl-2 = <&P9_19_gpio_pu_pin>;
+	// 	pinctrl-3 = <&P9_19_gpio_pd_pin>;
+	// 	pinctrl-4 = <&P9_19_gpio_input_pin>;
+	// 	pinctrl-5 = <&P9_19_spi_cs_pin>;
+	// 	pinctrl-6 = <&P9_19_can_pin>;
+	// 	pinctrl-7 = <&P9_19_i2c_pin>;
+	// 	pinctrl-8 = <&P9_19_pru_uart_pin>;
+	// 	pinctrl-9 = <&P9_19_timer_pin>;
+	// };
 
-	/* P9_20 (ZCZ ball D18) i2c */
-	P9_20_pinmux {
-		compatible = "bone-pinmux-helper";
-		status = "okay";
-		pinctrl-names = "default", "gpio", "gpio_pu", "gpio_pd", "gpio_input", "spi_cs", "can", "i2c", "pru_uart", "timer";
-		pinctrl-0 = <&P9_20_default_pin>;
-		pinctrl-1 = <&P9_20_gpio_pin>;
-		pinctrl-2 = <&P9_20_gpio_pu_pin>;
-		pinctrl-3 = <&P9_20_gpio_pd_pin>;
-		pinctrl-4 = <&P9_20_gpio_input_pin>;
-		pinctrl-5 = <&P9_20_spi_cs_pin>;
-		pinctrl-6 = <&P9_20_can_pin>;
-		pinctrl-7 = <&P9_20_i2c_pin>;
-		pinctrl-8 = <&P9_20_pru_uart_pin>;
-		pinctrl-9 = <&P9_20_timer_pin>;
-	};
+	// /* P9_20 (ZCZ ball D18) i2c */
+	// P9_20_pinmux {
+	// 	compatible = "bone-pinmux-helper";
+	// 	status = "okay";
+	// 	pinctrl-names = "default", "gpio", "gpio_pu", "gpio_pd", "gpio_input", "spi_cs", "can", "i2c", "pru_uart", "timer";
+	// 	pinctrl-0 = <&P9_20_default_pin>;
+	// 	pinctrl-1 = <&P9_20_gpio_pin>;
+	// 	pinctrl-2 = <&P9_20_gpio_pu_pin>;
+	// 	pinctrl-3 = <&P9_20_gpio_pd_pin>;
+	// 	pinctrl-4 = <&P9_20_gpio_input_pin>;
+	// 	pinctrl-5 = <&P9_20_spi_cs_pin>;
+	// 	pinctrl-6 = <&P9_20_can_pin>;
+	// 	pinctrl-7 = <&P9_20_i2c_pin>;
+	// 	pinctrl-8 = <&P9_20_pru_uart_pin>;
+	// 	pinctrl-9 = <&P9_20_timer_pin>;
+	// };
 
 
 	capeuniversal: cape-universal {
