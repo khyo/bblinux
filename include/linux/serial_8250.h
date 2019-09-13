@@ -113,6 +113,7 @@ struct uart_8250_port {
 	unsigned char		canary;		/* non-zero during system sleep
 						 *   if no_console_suspend
 						 */
+	int 						rts_gpio;
 	unsigned char		probe;
 #define UART_PROBE_RSA	(1 << 0)
 

@@ -39,6 +39,7 @@
 #include <linux/uaccess.h>
 #include <linux/pm_runtime.h>
 #include <linux/ktime.h>
+#include <linux/gpio.h>
 
 #include <asm/io.h>
 #include <asm/irq.h>
@@ -553,7 +554,18 @@ static void serial8250_clear_fifos(struct uart_8250_port *p)
 
 static inline void serial8250_em485_rts_after_send(struct uart_8250_port *p)
 {
-	unsigned char mcr = serial8250_in_MCR(p);
+	unsigned char mcr;
+
+	if (p->rts_gpio >= 0) {
+		if (p->port.rs485.flags & SER_RS485_RTS_AFTER_SEND) {
+			gpio_set_value(p->rts_gpio, 1);
+		} else {
+			gpio_set_value(p->rts_gpio, 0);
+		}
+		return;
+	}
+
+	mcr = serial8250_in_MCR(p);
 
 	if (p->port.rs485.flags & SER_RS485_RTS_AFTER_SEND)
 		mcr |= UART_MCR_RTS;
@@ -1576,6 +1588,7 @@ static inline void start_tx_rs485(struct uart_port *port)
 	struct uart_8250_port *up = up_to_u8250p(port);
 	struct uart_8250_em485 *em485 = up->em485;
 	unsigned char mcr;
+	int rts_state;
 
 	if (!(up->port.rs485.flags & SER_RS485_RX_DURING_TX))
 		serial8250_stop_rx(&up->port);
@@ -1585,13 +1598,23 @@ static inline void start_tx_rs485(struct uart_port *port)
 		hrtimer_cancel(&em485->stop_tx_timer);
 
 	mcr = serial8250_in_MCR(up);
-	if (!!(up->port.rs485.flags & SER_RS485_RTS_ON_SEND) !=
-	    !!(mcr & UART_MCR_RTS)) {
-		if (up->port.rs485.flags & SER_RS485_RTS_ON_SEND)
-			mcr |= UART_MCR_RTS;
-		else
-			mcr &= ~UART_MCR_RTS;
-		serial8250_out_MCR(up, mcr);
+	rts_state = up->rts_gpio >= 0 ? gpio_get_value(up->rts_gpio) : mcr & UART_MCR_RTS;
+
+	// printk("rts: start_tx_rs485::rts_state %d, rts_gpio: %d, rtsonsend: %d", rts_state, up->rts_gpio, up->port.rs485.flags & SER_RS485_RTS_ON_SEND);
+	if (!!(up->port.rs485.flags & SER_RS485_RTS_ON_SEND) != !!(rts_state)) {
+		if (up->rts_gpio >= 0) {
+			if (up->port.rs485.flags & SER_RS485_RTS_ON_SEND)
+				gpio_set_value(up->rts_gpio, 1);
+			else
+				gpio_set_value(up->rts_gpio, 0);
+		} else {
+			if (up->port.rs485.flags & SER_RS485_RTS_ON_SEND)
+				mcr |= UART_MCR_RTS;
+			else
+				mcr &= ~UART_MCR_RTS;
+			serial8250_out_MCR(up, mcr);
+		}
+		
 
 		if (up->port.rs485.delay_rts_before_send > 0) {
 			em485->active_timer = &em485->start_tx_timer;

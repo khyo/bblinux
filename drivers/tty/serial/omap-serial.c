@@ -1619,12 +1619,16 @@ static int serial_omap_probe_rs485(struct uart_omap_port *up,
 
 	/* check for tx enable gpio */
 	up->rts_gpio = of_get_named_gpio_flags(np, "rts-gpio", 0, &flags);
+	printk("rts: up->rts_gpio %u", up->rts_gpio);
 	if (gpio_is_valid(up->rts_gpio)) {
+		printk("rts: is valid");
 		ret = devm_gpio_request(up->dev, up->rts_gpio, "omap-serial");
+		printk("rts: devm_gpio_request %u", ret);
 		if (ret < 0)
 			return ret;
 		ret = gpio_direction_output(up->rts_gpio,
 					    flags & SER_RS485_RTS_AFTER_SEND);
+		printk("rts: gpio_direction_output %u", ret);
 		if (ret < 0)
 			return ret;
 	} else if (up->rts_gpio == -EPROBE_DEFER) {
@@ -1635,15 +1639,20 @@ static int serial_omap_probe_rs485(struct uart_omap_port *up,
 
 	if (of_property_read_u32_array(np, "rs485-rts-delay",
 				    rs485_delay, 2) == 0) {
+		printk("rts: of_property_read_u32_array: %u, %u", rs485_delay[0], rs485_delay[1]);
 		rs485conf->delay_rts_before_send = rs485_delay[0];
 		rs485conf->delay_rts_after_send = rs485_delay[1];
 	}
 
-	if (of_property_read_bool(np, "rs485-rx-during-tx"))
+	if (of_property_read_bool(np, "rs485-rx-during-tx")) {
+		printk("rts: rs485-rx-during-tx");
 		rs485conf->flags |= SER_RS485_RX_DURING_TX;
+	}
 
-	if (of_property_read_bool(np, "linux,rs485-enabled-at-boot-time"))
+	if (of_property_read_bool(np, "linux,rs485-enabled-at-boot-time")) {
+		printk("rts: linux,rs485-enabled-at-boot-time");
 		rs485conf->flags |= SER_RS485_ENABLED;
+	}
 
 	return 0;
 }

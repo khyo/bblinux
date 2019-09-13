@@ -25,6 +25,8 @@
 #include <linux/pm_qos.h>
 #include <linux/pm_wakeirq.h>
 #include <linux/dma-mapping.h>
+#include <linux/gpio.h>
+
 
 #include "8250.h"
 
@@ -722,6 +724,7 @@ static int omap_8250_rs485_config(struct uart_port *port,
 	 */
 	if (rs485->flags & SER_RS485_ENABLED) {
 		int ret = serial8250_em485_init(up);
+		printk("rts: serial8250_em485_init %d", ret);
 
 		if (ret) {
 			rs485->flags &= ~SER_RS485_ENABLED;
@@ -1114,6 +1117,72 @@ static const struct of_device_id omap8250_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, omap8250_dt_ids);
 
+
+static int serial_omap_probe_rs485(struct uart_8250_port *up,
+				   struct device_node *np)
+{
+	struct serial_rs485 obj_rs485conf;
+	struct serial_rs485 *rs485conf = &obj_rs485conf;
+	u32 rs485_delay[2];
+	enum of_gpio_flags flags;
+	int ret;
+
+	rs485conf->flags = 0;
+	up->rts_gpio = -EINVAL;
+
+	if (!np)
+		return 0;
+
+	if (of_property_read_bool(np, "rs485-rts-active-high"))
+		rs485conf->flags |= SER_RS485_RTS_ON_SEND;
+	else
+		rs485conf->flags |= SER_RS485_RTS_AFTER_SEND;
+
+	/* check for tx enable gpio */
+	up->rts_gpio = of_get_named_gpio_flags(np, "rts-gpio", 0, &flags);
+	printk("rts: up->rts_gpio %u", up->rts_gpio);
+	if (gpio_is_valid(up->rts_gpio)) {
+		printk("rts: is valid");
+		// ret = devm_gpio_request(up->dev, up->rts_gpio, "omap3-uart");
+		ret = gpio_request(up->rts_gpio, "omap3-uart");
+		printk("rts: (devm_)gpio_request %u", ret);
+		if (ret < 0)
+			return ret;
+		ret = gpio_direction_output(up->rts_gpio,
+					    flags & SER_RS485_RTS_AFTER_SEND);
+		printk("rts: gpio_direction_output %u", ret);
+		if (ret < 0)
+			return ret;
+	} else if (up->rts_gpio == -EPROBE_DEFER) {
+		return -EPROBE_DEFER;
+	} else {
+		up->rts_gpio = -EINVAL;
+	}
+
+	if (of_property_read_u32_array(np, "rs485-rts-delay",
+				    rs485_delay, 2) == 0) {
+		printk("rts: of_property_read_u32_array: %u, %u", rs485_delay[0], rs485_delay[1]);
+		rs485conf->delay_rts_before_send = rs485_delay[0];
+		rs485conf->delay_rts_after_send = rs485_delay[1];
+	}
+
+	if (of_property_read_bool(np, "rs485-rx-during-tx")) {
+		printk("rts: rs485-rx-during-tx");
+		rs485conf->flags |= SER_RS485_RX_DURING_TX;
+	}
+
+	if (of_property_read_bool(np, "linux,rs485-enabled-at-boot-time")) {
+		printk("rts: linux,rs485-enabled-at-boot-time");
+		rs485conf->flags |= SER_RS485_ENABLED;
+	}
+
+	ret = omap_8250_rs485_config(&up->port, rs485conf);
+	printk("rts: omap_8250_rs485_config %d, rts_gpio: %d", ret, up->rts_gpio);
+
+	return 0;
+}
+
+
 static int omap8250_probe(struct platform_device *pdev)
 {
 	struct resource *regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -1225,6 +1294,7 @@ static int omap8250_probe(struct platform_device *pdev)
 
 	omap_serial_fill_features_erratas(&up, priv);
 	up.port.handle_irq = omap8250_no_handle_irq;
+	serial_omap_probe_rs485(&up, pdev->dev.of_node);
 #ifdef CONFIG_SERIAL_8250_DMA
 	if (pdev->dev.of_node) {
 		/*
