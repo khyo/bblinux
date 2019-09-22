@@ -140,6 +140,12 @@
 	clock-frequency = <0x186a0>;
 };
 
+&dcan1 {
+  status = "okay";
+  pinctrl-names = "default";
+	pinctrl-0 = <&bb_can1_pins>;
+};
+
 &uart2 {
   status = "okay";
   pinctrl-names = "default";

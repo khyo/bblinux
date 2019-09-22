@@ -82,12 +82,12 @@
 		>;
 	};
 
-//	i2c2_pins: pinmux_i2c2_pins {
-//		pinctrl-single,pins = <
-//			AM33XX_IOPAD(0x978, PIN_INPUT_PULLUP | MUX_MODE3)	/* uart1_ctsn.i2c2_sda */
-//			AM33XX_IOPAD(0x97c, PIN_INPUT_PULLUP | MUX_MODE3)	/* uart1_rtsn.i2c2_scl */
-//		>;
-//	};
+	i2c2_pins: pinmux_i2c2_pins {
+		pinctrl-single,pins = <
+			AM33XX_IOPAD(0x978, PIN_INPUT_PULLUP | MUX_MODE3)	/* uart1_ctsn.i2c2_sda */
+			AM33XX_IOPAD(0x97c, PIN_INPUT_PULLUP | MUX_MODE3)	/* uart1_rtsn.i2c2_scl */
+		>;
+	};
 
 	uart0_pins: pinmux_uart0_pins {
 		pinctrl-single,pins = <
@@ -284,8 +284,8 @@
 
 &i2c2 {
 	pinctrl-names = "default";
-	//pinctrl-0 = <&i2c2_pins>;
-	pinctrl-0 = <>;
+	pinctrl-0 = <&i2c2_pins>;
+	// pinctrl-0 = <>;
 
 	status = "okay";
 	clock-frequency = <100000>;
