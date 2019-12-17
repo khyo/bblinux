@@ -638,6 +638,7 @@ int serial8250_em485_init(struct uart_8250_port *p)
 	p->em485->start_tx_timer.function = &serial8250_em485_handle_start_tx;
 	p->em485->port = p;
 	p->em485->active_timer = NULL;
+	
 	serial8250_em485_rts_after_send(p);
 
 	return 0;
@@ -1401,7 +1402,6 @@ static void autoconfig_irq(struct uart_8250_port *up)
 
 	irqs = probe_irq_on();
 	serial8250_out_MCR(up, 0);
-	udelay(10);
 	if (port->flags & UPF_FOURPORT) {
 		serial8250_out_MCR(up, UART_MCR_DTR | UART_MCR_RTS);
 	} else {
@@ -1414,7 +1414,6 @@ static void autoconfig_irq(struct uart_8250_port *up)
 	serial_in(up, UART_IIR);
 	serial_in(up, UART_MSR);
 	serial_out(up, UART_TX, 0xFF);
-	udelay(20);
 	irq = probe_irq_off(irqs);
 
 	serial8250_out_MCR(up, save_mcr);
@@ -1451,12 +1450,14 @@ static void __do_stop_tx_rs485(struct uart_8250_port *p)
 	 * received during the half-duplex transmission.
 	 * Enable previously disabled RX interrupts.
 	 */
-	if (!(p->port.rs485.flags & SER_RS485_RX_DURING_TX)) {
-		serial8250_clear_and_reinit_fifos(p);
+	// if (!(p->port.rs485.flags & SER_RS485_RX_DURING_TX)) {
+	// 	serial8250_clear_and_reinit_fifos(p);
+	// 	serial_in(p, UART_RX);
+	// 	serial_in(p, UART_LSR);
 
-		p->ier |= UART_IER_RLSI | UART_IER_RDI;
-		serial_port_out(&p->port, UART_IER, p->ier);
-	}
+	// 	p->ier |= UART_IER_RLSI | UART_IER_RDI;
+	// 	serial_port_out(&p->port, UART_IER, p->ier);
+	// }
 }
 static enum hrtimer_restart serial8250_em485_handle_stop_tx(struct hrtimer *t)
 {
@@ -1557,8 +1558,10 @@ static inline void __start_tx(struct uart_port *port)
 {
 	struct uart_8250_port *up = up_to_u8250p(port);
 
-	if (up->dma && !up->dma->tx_dma(up))
+	if (up->dma && !up->dma->tx_dma(up)) {
+		printk("uart-tx_dma:0");
 		return;
+	}
 
 	if (!(up->ier & UART_IER_THRI)) {
 		up->ier |= UART_IER_THRI;
@@ -1592,17 +1595,19 @@ static inline void start_tx_rs485(struct uart_port *port)
 
 	if (!(up->port.rs485.flags & SER_RS485_RX_DURING_TX))
 		serial8250_stop_rx(&up->port);
-
+	
 	em485->active_timer = NULL;
 	if (hrtimer_is_queued(&em485->stop_tx_timer))
 		hrtimer_cancel(&em485->stop_tx_timer);
-
+	
 	mcr = serial8250_in_MCR(up);
 	rts_state = up->rts_gpio >= 0 ? gpio_get_value(up->rts_gpio) : mcr & UART_MCR_RTS;
-
+	
 	// printk("rts: start_tx_rs485::rts_state %d, rts_gpio: %d, rtsonsend: %d", rts_state, up->rts_gpio, up->port.rs485.flags & SER_RS485_RTS_ON_SEND);
 	if (!!(up->port.rs485.flags & SER_RS485_RTS_ON_SEND) != !!(rts_state)) {
+		udelay(100);
 		if (up->rts_gpio >= 0) {
+			
 			if (up->port.rs485.flags & SER_RS485_RTS_ON_SEND)
 				gpio_set_value(up->rts_gpio, 1);
 			else
@@ -1614,6 +1619,7 @@ static inline void start_tx_rs485(struct uart_port *port)
 				mcr &= ~UART_MCR_RTS;
 			serial8250_out_MCR(up, mcr);
 		}
+		udelay(100);
 		
 
 		if (up->port.rs485.delay_rts_before_send > 0) {
@@ -1867,7 +1873,8 @@ static bool handle_rx_dma(struct uart_8250_port *up, unsigned int iir)
 	case UART_IIR_RLSI:
 		return true;
 	}
-	return up->dma->rx_dma(up);
+	bool ret = up->dma->rx_dma(up);
+	return ret;
 }
 
 /*
@@ -1878,7 +1885,7 @@ int serial8250_handle_irq(struct uart_port *port, unsigned int iir)
 	unsigned char status;
 	unsigned long flags;
 	struct uart_8250_port *up = up_to_u8250p(port);
-
+	
 	if (iir & UART_IIR_NO_INT)
 		return 0;
 
@@ -1887,6 +1894,7 @@ int serial8250_handle_irq(struct uart_port *port, unsigned int iir)
 	status = serial_port_in(port, UART_LSR);
 
 	if (status & (UART_LSR_DR | UART_LSR_BI)) {
+		printk("irq-dr:%x", status);
 		if (!up->dma || handle_rx_dma(up, iir))
 			status = serial8250_rx_chars(up, status);
 	}

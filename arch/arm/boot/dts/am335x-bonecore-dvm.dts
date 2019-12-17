@@ -1,0 +1,126 @@
+/*
+ * Copyright (C) Subinitial LLC
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+
+#include "am33xx.dtsi"
+#include "am335x-bone-common.dtsi"
+#include "am335x-bonegreen-common.dtsi"
+// #include "am335x-pruss-rproc.dtsi"
+/* #include "am335x-bone-jtag.dtsi" */
+
+#include "am335x-bonecore-common.dtsi"
+
+
+&am33xx_pinmux {
+  bb_gpio_pins: pinmux_bb_gpio_pins {
+    pinctrl-single,pins = <
+      BONE_P8_14 (PIN_INPUT_PULLDOWN | MUX_MODE7)  // EEPROM_WR
+      BONE_P8_17 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  // LXI_RED
+      BONE_P8_18 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  // LXI_GREEN
+  
+      BONE_P8_27 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  // ADC24_LO
+      BONE_P8_28 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)
+      BONE_P8_29 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)
+      BONE_P8_30 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)
+
+      BONE_P8_33 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)
+
+      BONE_P8_39 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)
+      BONE_P8_40 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)
+
+      BONE_P9_14 (PIN_INPUT_PULLDOWN | MUX_MODE7)  // dvm_en
+
+      BONE_P9_26 (PIN_INPUT_PULLDOWN | MUX_MODE7)  // ~adc_drdy
+    >;
+  };
+  
+  bb_spi1_pins: pinmux_bb_spi1_pins {
+    pinctrl-single,pins = <
+      
+      BONE_P9_28 (PIN_OUTPUT_PULLUP | MUX_MODE3)  // spi1_cs0
+      BONE_P9_29 (PIN_INPUT_PULLUP  | MUX_MODE3)  // spi1_d0 MISO
+      BONE_P9_30 (PIN_OUTPUT_PULLDOWN  | MUX_MODE3)  // spi1_d1 MOSI
+      BONE_P9_31 (PIN_OUTPUT_PULLUP  | MUX_MODE3)  // spi1_sclk
+    >;
+  };
+
+  // bb_pwm0_pins: pinmux_bb_pwm0_pins {
+  //   pinctrl-single,pins = <
+  //     BONE_P9_22 (PIN_OUTPUT | MUX_MODE3)	/* iso_bias_drive */
+  //   >;
+  // };
+
+  bb_pwm2_pins: pinmux_bb_pwm2_pins {
+    pinctrl-single,pins = <
+      BONE_P8_19 (PIN_OUTPUT | MUX_MODE4)	/* iso_bias_drive_0 */
+    >;
+  };
+};
+
+&capeuniversal {
+  P8_14 { gpio = <&gpio0 26 0>; output; init-low; dir-changeable; };
+  P8_17 { gpio = <&gpio0 27 0>; output; init-low; dir-changeable; };
+  P8_18 { gpio = <&gpio2  1 0>; output; init-low; dir-changeable; };
+
+  P8_27 { gpio = <&gpio2 22 0>; output; init-low; dir-changeable; };
+  P8_28 { gpio = <&gpio2 24 0>; output; init-low; dir-changeable; };
+  P8_29 { gpio = <&gpio2 23 0>; output; init-low; dir-changeable; };
+  P8_30 { gpio = <&gpio2 25 0>; output; init-low; dir-changeable; };
+
+  P8_33 { gpio = <&gpio0  9 0>; output; init-low; dir-changeable; };
+  
+  P8_39 { gpio = <&gpio2 12 0>; output; init-low; dir-changeable; };
+  P8_40 { gpio = <&gpio2 13 0>; output; init-low; dir-changeable; };
+
+  P9_14 { gpio = <&gpio1 18 0>; output; init-low; dir-changeable; };
+  
+  P9_26 { gpio = <&gpio0 14 0>; input; dir-changeable; };
+};
+
+// &epwmss0 {
+//   status = "okay";
+// };
+
+// &ehrpwm0 {
+//   status = "okay";
+//   pinctrl-names = "default";
+//   pinctrl-0 = <&bb_pwm0_pins>;
+// };
+
+&epwmss2 {
+  status = "okay";
+};
+
+&ehrpwm2 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_pwm2_pins>;
+};
+
+
+&pruss {
+  status = "okay";
+};
+
+&spi1 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_spi1_pins>;
+
+  spidev@0 {
+    compatible = "linux,spidev";
+    spi-max-frequency = <3800000>;
+    reg = <0>;
+    // spi-cpha;
+  };
+};
+
+/ {
+	model = "TI AM335x Bonecore WiFi Test-Bed";
+	compatible = "ti,am335x-bone-green", "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+};
