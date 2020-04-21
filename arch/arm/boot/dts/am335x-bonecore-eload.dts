@@ -39,16 +39,16 @@
       BONE_P9_17 (PIN_OUTPUT_PULLUP | MUX_MODE0)  // spi0_cs0
       BONE_P9_21 (PIN_INPUT_PULLUP  | MUX_MODE0)  // spi0_d0 MISO
       BONE_P9_18 (PIN_OUTPUT_PULLDOWN  | MUX_MODE0)  // spi0_d1 MOSI
-      BONE_P9_22 (PIN_OUTPUT_PULLUP  | MUX_MODE0)  // spi0_sclk
+      BONE_P9_22 (PIN_INPUT_PULLUP  | MUX_MODE0)  // spi0_sclk
     >;
   };
 
   bb_spi1_pins: pinmux_bb_spi1_pins {
     pinctrl-single,pins = <
-      BONE_P9_28 (PIN_OUTPUT_PULLUP | MUX_MODE3)  // spi1_cs0
+      // BONE_P9_28 (PIN_OUTPUT_PULLUP | MUX_MODE3)  // spi1_cs0
       BONE_P9_29 (PIN_INPUT_PULLUP  | MUX_MODE3)  // spi1_d0 MISO
       BONE_P9_30 (PIN_OUTPUT_PULLDOWN  | MUX_MODE3)  // spi1_d1 MOSI
-      BONE_P9_31 (PIN_OUTPUT_PULLUP  | MUX_MODE3)  // spi1_sclk
+      BONE_P9_31 (PIN_INPUT_PULLUP  | MUX_MODE3)  // spi1_sclk
     >;
   };
 
@@ -73,9 +73,9 @@
 
   bb_ecap0_pins: pinmux_bb_ecap0_pins {
     pinctrl-single,pins = <
-      BONE_P8_07 (PIN_INPUT_PULLDOWN | MUX_MODE2)	/* FAN_TACH (Timer4) */
+      BONE_P8_07 (PIN_INPUT_PULLUP | MUX_MODE2)	/* FAN_TACH (Timer4) */
 
-      BONE_P9_42A (PIN_INPUT_PULLDOWN | MUX_MODE0)	/* FAN_TACH' */
+      BONE_P9_42A (PIN_INPUT_PULLUP | MUX_MODE0)	/* FAN_TACH' */
       BONE_P9_42B (PIN_INPUT | MUX_MODE7)	/* spare-tied */
 
       /* GPIOS */
@@ -97,9 +97,8 @@
 
   P8_27 { gpio = <&gpio2 22 0>; input; dir-changeable; };  // ~NETWORK_RESET
   P8_28 { gpio = <&gpio2 24 0>; input; dir-changeable; };  // SPI1_MISO_ISO (~DRDY)
-
-
-  P8_28 { gpio = <&gpio2 24 0>; input; dir-changeable; };  // SPI1_MISO_ISO (~DRDY)
+  // P9_17 { gpio = <&gpio0 5 0>; output; init-high; dir-changeable; };  // SPI0_CS
+  P9_28 { gpio = <&gpio3 17 0>; output; init-high; dir-changeable; };  // SPI1_CS
 
 };
 

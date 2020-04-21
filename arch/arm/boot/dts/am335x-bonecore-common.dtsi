@@ -4,12 +4,13 @@
   bonecore_pins: pinmux_bonecore_pins {
     pinctrl-single,pins = <
       /* AM33XX_IOPAD(0x9b0, PIN_OUTPUT_PULLDOWN | MUX_MODE3) */  /* Example */
-      BONE_P8_26 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* network reset */
-      BONE_P8_31 (PIN_OUTPUT_PULLUP | MUX_MODE7)	 /* nEXT Power Enable GPIO */
-      BONE_P8_32 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  /* core_capprechargeA */
-      /* BONE_P9_10 (PIN_OUTPUT_PULLUP | MUX_MODE7) */  /* core_sysphyreset */
-      BONE_P9_12 (PIN_INPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
-      BONE_P9_15 (PIN_INPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
+
+      BONE_P8_26 (PIN_INPUT_PULLUP | MUX_MODE7)  /* network reset */ 
+      BONE_P8_31 (PIN_OUTPUT_PULLUP | MUX_MODE7)	 /* nEXT Power Enable GPIO */ 
+      BONE_P8_32 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  /* core_capprechargeA */ 
+
+      BONE_P9_12 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
+      BONE_P9_15 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* i2c2_en */ 
     >;
   };
 };
@@ -18,7 +19,7 @@
   P8_26 {
     gpio-name = "nnetreset";
     gpio = <&gpio1 29 0>;
-    output; init-high; dir-changeable;
+    input; dir-changeable;
   };
   P8_31 {
     gpio-name = "nextpwren";
@@ -33,12 +34,12 @@
   P9_12 {
     gpio-name = "nphyresetcmd";
     gpio = <&gpio1 28 0>;
-    input; dir-changeable;
+    output; init-high; dir-changeable;
   };
   P9_15 {
     gpio-name = "nsys5voutilimit";
     gpio = <&gpio1 16 0>;
-    input; dir-changeable;
+    output; init-low; dir-changeable;
   };
 };
 
@@ -47,6 +48,11 @@
     compatible = "dallas,ds1307";
     reg = <0x68>;
   };
+};
+
+
+&pruss {
+  status = "okay";
 };
 
 &cape_eeprom0 { status = "disabled"; };

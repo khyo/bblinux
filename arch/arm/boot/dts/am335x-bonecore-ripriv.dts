@@ -1,0 +1,305 @@
+/*
+ * Copyright (C) Subinitial LLC
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+
+#include "am33xx.dtsi"
+#include "am335x-bone-common.dtsi"
+#include "am335x-bonegreen-common.dtsi"
+// #include "am335x-pruss-rproc.dtsi"
+/* #include "am335x-bone-jtag.dtsi" */
+
+#include "am335x-bonecore-common.dtsi"
+
+
+&am33xx_pinmux {
+  i2c1_pins: pinmux_i2c1_pins {
+    pinctrl-single,pins = <
+      BONE_P9_24 (PIN_INPUT_PULLUP | MUX_MODE3)
+      BONE_P9_26 (PIN_INPUT_PULLUP | MUX_MODE3)
+    >;
+  };
+
+  // bb_uart2_pins: pinmux_bb_uart2_pins {
+  //   pinctrl-single,pins = <
+  //     BONE_P9_21 (PIN_OUTPUT | MUX_MODE1)
+  //     BONE_P9_22 (PIN_INPUT_PULLUP  | MUX_MODE1)
+  //   >;
+  // };
+
+  bb_uart4_pins: pinmux_bb_uart4_pins {
+    pinctrl-single,pins = <
+      BONE_P9_11 (PIN_INPUT_PULLUP  | MUX_MODE6)
+      BONE_P9_13 (PIN_OUTPUT | MUX_MODE6)
+    >;
+  };
+
+  // bb_uart5_pins: pinmux_bb_uart5_pins {
+  //   pinctrl-single,pins = <
+  //     BONE_P8_37 (PIN_OUTPUT | MUX_MODE4)	// uart5_txd
+  //     BONE_P8_38 (PIN_INPUT_PULLUP | MUX_MODE4)	// uart5_rxd
+  //   >;
+  // };
+
+  // bb_can1_pins: pinmux_bb_can1_pins {
+  //   pinctrl-single,pins = <
+  //     BONE_P9_24 (PIN_INPUT_PULLUP  | MUX_MODE2)  // dcan1_rx
+  //     BONE_P9_26 (PIN_OUTPUT_PULLDOWN  | MUX_MODE2)  // dcan1_tx
+  //   >;
+  // };
+
+  bb_pwm1_pins: pinmux_bb_pwm1_pins {
+    pinctrl-single,pins = <
+      BONE_P9_14 (PIN_OUTPUT | MUX_MODE6)	/* ehrpwm1A  */
+      BONE_P9_16 (PIN_OUTPUT | MUX_MODE6)	/* ehrpwm1B */
+    >;
+  };
+
+  bb_pwm2_pins: pinmux_bb_pwm2_pins {
+    pinctrl-single,pins = <
+      BONE_P8_13 (PIN_OUTPUT | MUX_MODE4)	/* ehrpwm2B */
+      BONE_P8_19 (PIN_OUTPUT | MUX_MODE4)	/* ehrpwm2A */
+    >;
+  };
+
+  bb_ecap0_pins: pinmux_bb_ecap0_pins {
+    pinctrl-single,pins = <
+      BONE_P9_42A (PIN_INPUT_PULLDOWN | MUX_MODE0)	/* eCAP0/PWM */
+      BONE_P9_42B (PIN_INPUT | MUX_MODE7)	/* spare-tied */
+    >;
+  };
+    
+  bb_spi0_pins: pinmux_bb_spi0_pins {
+    pinctrl-single,pins = <
+      BONE_P8_39 (PIN_OUTPUT_PULLUP | MUX_MODE7)  // spi0_cs6
+
+      BONE_P8_41 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_42 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_43 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_44 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_45 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_46 (PIN_OUTPUT | MUX_MODE7)  // spi0_cs_1
+
+      BONE_P9_18 (PIN_OUTPUT | MUX_MODE0)  // spi0_d1 MOSI
+      BONE_P9_21 (PIN_INPUT | MUX_MODE0)  // spi0_d0 MISO
+      BONE_P9_22 (PIN_INPUT | MUX_MODE0)  // spi0_sclk
+    >;
+  };
+    
+  bb_spi1_pins: pinmux_bb_spi1_pins {
+    pinctrl-single,pins = <
+      BONE_P9_25 (PIN_OUTPUT_PULLUP | MUX_MODE7)  // SPI1_CS_2
+      BONE_P9_27 (PIN_OUTPUT_PULLUP | MUX_MODE7)  // SPI1_CS_1
+      BONE_P9_28 (PIN_OUTPUT_PULLUP | MUX_MODE7)  // SPI1_CS_0
+      BONE_P9_41A (PIN_INPUT | MUX_MODE7)  // p41 spare
+      BONE_P9_41B (PIN_OUTPUT_PULLUP | MUX_MODE7)  // SPI1_CS_3
+
+      BONE_P9_29 (PIN_INPUT_PULLUP  | MUX_MODE3)  // spi1_d0 MISO
+      BONE_P9_30 (PIN_OUTPUT_PULLDOWN  | MUX_MODE3)  // spi1_d1 MOSI
+      BONE_P9_31 (PIN_INPUT_PULLUP  | MUX_MODE3)  // spi1_sclk
+    >;
+  };
+
+  bb_gpio_pins: pinmux_bb_gpio_pins {
+    pinctrl-single,pins = <
+      BONE_P8_26 (PIN_INPUT_PULLUP | MUX_MODE7)  /* network reset */ 
+      BONE_P8_31 (PIN_OUTPUT_PULLUP | MUX_MODE7)	 /* nEXT Power Enable GPIO */ 
+      BONE_P8_32 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)  /* core_capprechargeA */ 
+
+      BONE_P9_12 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* core_phyresetcmd */
+      BONE_P9_15 (PIN_OUTPUT_PULLUP | MUX_MODE7)  /* i2c2_en */ 
+
+      BONE_P8_07 (PIN_OUTPUT | MUX_MODE2)  // MCU_CLK (6MHz)
+      BONE_P8_08 (PIN_INPUT | MUX_MODE2)   // FANTACH1
+      BONE_P8_09 (PIN_INPUT | MUX_MODE2)   // FANTACH2
+      BONE_P8_10 (PIN_INPUT | MUX_MODE2)   // FANTACH3
+
+      BONE_P8_11 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_12 (PIN_INPUT | MUX_MODE7)
+      
+      BONE_P8_14 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_15 (PIN_INPUT_PULLUP | MUX_MODE7)
+      BONE_P8_16 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_17 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_18 (PIN_INPUT | MUX_MODE7)
+
+      BONE_P8_27 (PIN_OUTPUT | MUX_MODE7)
+      BONE_P8_28 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_29 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_30 (PIN_INPUT | MUX_MODE7)
+      
+      BONE_P8_33 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_34 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_35 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_36 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_37 (PIN_INPUT | MUX_MODE7)
+      BONE_P8_38 (PIN_INPUT | MUX_MODE7)
+
+      BONE_P8_40 (PIN_INPUT | MUX_MODE7)
+      
+      BONE_P9_17 (PIN_OUTPUT | MUX_MODE7)  // SIRIP_PPS
+
+      BONE_P9_19 (PIN_INPUT | MUX_MODE7)  // SIRIP_SPARE1
+      BONE_P9_20 (PIN_INPUT | MUX_MODE7)  // SIRIP_SPARE2
+
+      BONE_P9_23 (PIN_OUTPUT | MUX_MODE7)  // IBBT_/RE
+
+      
+      BONE_P9_23 (PIN_INPUT | MUX_MODE7)
+      BONE_P9_25 (PIN_INPUT | MUX_MODE7)
+      BONE_P9_27 (PIN_INPUT | MUX_MODE7)
+      BONE_P9_41A (PIN_INPUT | MUX_MODE7)
+      BONE_P9_41B (PIN_INPUT | MUX_MODE7)
+    >;
+  };
+};
+
+&capeuniversal {
+  pinctrl-0 = <&bb_gpio_pins>;
+
+  P8_11 { gpio = <&gpio1 13 0>; output; init-high; dir-changeable; };  // ADC24_/SYNCRESET
+  P8_12 { gpio = <&gpio1 12 0>; input; dir-changeable; };              // SIRIP_P8_p12_SPARE
+  
+  P8_14 { gpio = <&gpio0 26 0>; output; init-low; dir-changeable; };   // IBBT_DE
+  P8_15 { gpio = <&gpio1 15 0>; input; dir-changeable; };              // PRIMARY_ADC24_/DRDY
+  P8_16 { gpio = <&gpio1 14 0>; input; dir-changeable; };              // SIRIP_P8_p16_SPARE
+  P8_17 { gpio = <&gpio0 27 0>; input; dir-changeable; };              // LXI_RED / SIRIP_P8_p17_SPARE
+  P8_18 { gpio = <&gpio2  1 0>; input; dir-changeable; };              // LXI_GREEN / SIRIP_P8_p18_SPARE
+
+  P8_27 { gpio = <&gpio2 22 0>; output; init-low; dir-changeable; };  // /BBG_TRIGGER_OUT
+  P8_28 { gpio = <&gpio2 24 0>; input; dir-changeable; };  // IOX_INTERRUPT_INT0
+  P8_29 { gpio = <&gpio2 23 0>; input; dir-changeable; };  // IOX_INTERRUPT_INT1
+  P8_30 { gpio = <&gpio2 25 0>; input; dir-changeable; };  // SPARE
+  
+  P8_33 { gpio = <&gpio0 9  0>; input; dir-changeable; };  // SPARE
+  P8_34 { gpio = <&gpio2 17 0>; input; dir-changeable; };  // nTrigger(input)
+  P8_35 { gpio = <&gpio0 8  0>; input; dir-changeable; };  // SPARE
+  P8_36 { gpio = <&gpio2 16 0>; input; dir-changeable; };  // PRU1 SamplerateIn
+  P8_37 { gpio = <&gpio2 14 0>; input; dir-changeable; };  // SPARE
+  P8_38 { gpio = <&gpio2 15 0>; input; dir-changeable; };  // IOX_OE_INT1 / SPARE
+  P8_39 { gpio = <&gpio2 12 0>; output; init-high; dir-changeable; };  // SPI0_CS_6
+  P8_40 { gpio = <&gpio0 13 0>; input; dir-changeable; };  // SPARE
+  P8_41 { gpio = <&gpio2 10 0>; output; init-high; dir-changeable; };  // SPI0_CS_4
+  P8_42 { gpio = <&gpio2 11 0>; output; init-high; dir-changeable; };
+  P8_43 { gpio = <&gpio2  8 0>; output; init-high; dir-changeable; };
+  P8_44 { gpio = <&gpio2  9 0>; output; init-high; dir-changeable; };
+  P8_45 { gpio = <&gpio2  6 0>; output; init-high; dir-changeable; };
+  P8_46 { gpio = <&gpio2  7 0>; output; init-high; dir-changeable; };  // SPI0_CS_1
+
+  P9_17 { gpio = <&gpio0  5 0>; output; init-low; dir-changeable; };  // SIRIP_PPS
+  
+  P9_19 { gpio = <&gpio0 13 0>; input; dir-changeable; };  // SIRIP_SPARE1
+  P9_20 { gpio = <&gpio0 12 0>; input; dir-changeable; };  // SIRIP_SPARE0
+
+  P9_23 { gpio = <&gpio1 17 0>; output; init-high; dir-changeable; };  // IBBT_/RE
+
+  P9_25 { gpio = <&gpio3 21 0>; output; init-high; dir-changeable; };  // SPI1_CS_2, (Devboard ADC24_nSYNCRESET)
+  P9_27 { gpio = <&gpio3 19 0>; output; init-high; dir-changeable; };  // SPI1_CS_1 (Devboard adc24 nDRDY)
+  P9_28 { gpio = <&gpio3 17 0>; output; init-high; dir-changeable; };  // SPI1_CS_0
+  P9_41A{ gpio = <&gpio0 20 0>; input; dir-changeable; };              // tied to SPI1_CS_3
+  P9_41B{ gpio = <&gpio3 20 0>; output; init-high; dir-changeable; };  // SPI1_CS_3
+  P9_42B{ gpio = <&gpio3 18 0>; input; dir-changeable; };              // tied to ECAP pwmchip0
+
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+	clock-frequency = <400000>;
+};
+
+&dcan0 {
+  status = "okay";
+  pinctrl-names = "default";
+	// pinctrl-0 = <&bb_can0_pins>;
+};
+
+// &dcan1 {
+//   status = "okay";
+//   pinctrl-names = "default";
+// 	pinctrl-0 = <&bb_can1_pins>;
+// };
+
+// &uart2 {
+//   status = "okay";
+//   pinctrl-names = "default";
+//   // pinctrl-0 = <&bb_uart2_pins>;
+// };
+
+&uart4 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_uart4_pins>;
+};
+
+&uart5 {
+  status = "okay";
+  pinctrl-names = "default";
+  // pinctrl-0 = <&bb_uart5_pins>;
+};
+
+&epwmss0 { 
+  status = "okay";
+};
+
+&ecap0 {
+  status = "okay";
+  pinctrl-names = "default";
+  // pinctrl-0 = <&bb_ecap0_pins>;
+};
+
+&epwmss1 {
+  status = "okay";
+};
+
+&ehrpwm1 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_pwm1_pins>;
+};
+
+&epwmss2 {
+  status = "okay";
+};
+
+&ehrpwm2 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_pwm2_pins>;
+};
+
+&spi0 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_spi0_pins>;
+
+  spidev@0 {
+    compatible = "linux,spidev";
+    spi-max-frequency = <9900000>;
+    reg = <0>;
+    // spi-cpha;
+  };
+};
+
+&spi1 {
+  status = "okay";
+  pinctrl-names = "default";
+  pinctrl-0 = <&bb_spi1_pins>;
+
+  spidev@0 {
+    compatible = "linux,spidev";
+    spi-max-frequency = <9900000>;
+    reg = <0>;
+    // spi-cpha;
+  };
+};
+
+/ {
+	model = "TI AM335x Bonecore WiFi Test-Bed";
+	compatible = "ti,am335x-bone-green", "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+};
