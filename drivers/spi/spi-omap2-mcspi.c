@@ -39,6 +39,81 @@
 
 #include <linux/platform_data/spi-omap2-mcspi.h>
 
+
+///// Kyle Howen's Userspace Multi-Chipselect Interface
+#include <linux/kobject.h>    // Using kobjects for the sysfs bindings
+#include <linux/kobject.h>    // Using kobjects for the sysfs bindings
+
+extern volatile unsigned int * k2_gpios[4];
+
+typedef struct {
+    signed char gpio;
+    signed char idx;
+		signed char activelow;
+} Pin;
+
+enum {
+    GPIO_CTRL = 0x130/4,
+    GPIO_OE = 0x134/4,
+    GPIO_DATAIN = 0x138/4,
+    GPIO_DATAOUT = 0x13C/4,
+    GPIO_CLEARDATAOUT = 0x190/4,
+    GPIO_SETDATAOUT = 0x194/4,
+};
+
+static int alt_cs_assert(Pin* pin, int do_assert) {
+    volatile unsigned int * gpio;
+		
+    if(pin->gpio < 0 || pin->gpio > 3 || pin->idx < 0 || pin->idx > 31) {
+        return -1;
+    }
+    gpio = k2_gpios[pin->gpio];
+    if (!gpio) {
+        return -1;
+    }
+
+		do_assert = !!do_assert;
+    if (do_assert ^ pin->activelow) {
+        gpio[GPIO_SETDATAOUT] = 1 << pin->idx;
+    } else {
+        gpio[GPIO_CLEARDATAOUT] = 1 << pin->idx;
+    }
+		return 0;
+}
+
+static Pin spi_cs_alts[2];
+
+static ssize_t spi_cs_alt_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+   int retval = sprintf(buf, "%d %d %d\n", spi_cs_alts[1].gpio, spi_cs_alts[1].idx, spi_cs_alts[1].activelow);
+   return retval;
+}
+
+static ssize_t spi_cs_alt_store(struct kobject *kobj, struct kobj_attribute *attr,
+                             const char *buf, size_t count){
+	 alt_cs_assert(spi_cs_alts+1, 0);  // deassert previous cs
+   sscanf(buf, "%hhd %hhd %hhd", &spi_cs_alts[1].gpio, &spi_cs_alts[1].idx, &spi_cs_alts[1].activelow);
+	 spi_cs_alts[1].activelow = !!spi_cs_alts[1].activelow;
+   return count;
+}
+
+static struct kobj_attribute spi1_cs_alt_attr_obj = __ATTR(spi1_cs_alt,  S_IWUSR | S_IRUGO, spi_cs_alt_show, spi_cs_alt_store);
+
+static int spi_cs_alt_init(void) {
+   int result = 0;
+	 spi_cs_alts[0].gpio = -1;
+	 spi_cs_alts[1].gpio = -1;
+   result = sysfs_create_file(kernel_kobj, &spi1_cs_alt_attr_obj.attr);
+   if(result) {
+      printk(KERN_ALERT "SPI CS Alt: failed to create sysfs group\n");
+      return result;
+   }
+
+   return result;
+}
+////// END Kyle Howen's Userspace Multi-Chipselect Interface
+
+
+
 #define OMAP2_MCSPI_MAX_FREQ		48000000
 #define OMAP2_MCSPI_MAX_DIVIDER		4096
 #define OMAP2_MCSPI_MAX_FIFODEPTH	64
@@ -246,9 +321,9 @@ static void omap2_mcspi_set_cs(struct spi_device *spi, bool enable)
 	u32 l;
 
 	/* The controller handles the inverted chip selects
-	 * using the OMAP2_MCSPI_CHCONF_EPOL bit so revert
-	 * the inversion from the core spi_set_cs function.
-	 */
+		* using the OMAP2_MCSPI_CHCONF_EPOL bit so revert
+		* the inversion from the core spi_set_cs function.
+		*/
 	if (spi->mode & SPI_CS_HIGH)
 		enable = !enable;
 
@@ -258,13 +333,15 @@ static void omap2_mcspi_set_cs(struct spi_device *spi, bool enable)
 			dev_err(mcspi->dev, "failed to get sync: %d\n", err);
 			return;
 		}
+		
+		l = mcspi_cached_chconf0(spi) | OMAP2_MCSPI_CHCONF_FORCE;
 
-		l = mcspi_cached_chconf0(spi);
-
-		if (enable)
-			l &= ~OMAP2_MCSPI_CHCONF_FORCE;
-		else
-			l |= OMAP2_MCSPI_CHCONF_FORCE;
+		// try alternate cs if set
+		if (alt_cs_assert(spi_cs_alts+1, enable)) { 
+			// otherwise use hardware SPI_CS
+			if (enable)
+				l &= ~OMAP2_MCSPI_CHCONF_FORCE;
+		}
 
 		mcspi_write_chconf0(spi, l);
 
@@ -1340,6 +1417,8 @@ static int omap2_mcspi_probe(struct platform_device *pdev)
 	u32			regs_offset = 0;
 	struct device_node	*node = pdev->dev.of_node;
 	const struct of_device_id *match;
+
+	spi_cs_alt_init();
 
 	master = spi_alloc_master(&pdev->dev, sizeof *mcspi);
 	if (master == NULL) {

@@ -39,18 +39,12 @@
 #include <linux/kobject.h>    // Using kobjects for the sysfs bindings
 
 
+extern volatile unsigned int * k2_gpios[4];
+
 typedef struct {
     signed char gpio;
     signed char idx;
 } Pin;
-
-static struct {
-    volatile unsigned int * gpios[4];
-    int delay;
-    Pin halt;
-    Pin warn;
-    unsigned char warnActiveHigh;
-} halts;
 
 enum {
     GPIO_CTRL = 0x130/4,
@@ -67,7 +61,7 @@ static void pin_cmd(Pin* pin, int state) {
     if(pin->gpio < 0 || pin->gpio > 3 || pin->idx < 0 || pin->idx > 31) {
         return;
     }
-    gpio = halts.gpios[pin->gpio];
+    gpio = k2_gpios[pin->gpio];
     if (!gpio) {
         return;
     }
@@ -78,6 +72,17 @@ static void pin_cmd(Pin* pin, int state) {
         gpio[GPIO_CLEARDATAOUT] = 1 << pin->idx;
     }
 }
+
+volatile unsigned int * k2_gpios[4];
+
+static struct {
+		volatile unsigned int** gpios;
+    int delay;
+    Pin halt;
+    Pin warn;
+    unsigned char warnActiveHigh;
+} halts;
+
 
 extern int    haltsignal;            ///< For information, store the number of button presses
 extern struct kobject* haltsignal_kobj;
@@ -115,7 +120,7 @@ static struct kobj_attribute haltconfig_attr_obj = __ATTR(haltconfig,  S_IWUSR |
 
 static int haltsignal_init(void) {
    int result = 0;
-
+	 halts.gpios = k2_gpios;
    halts.gpios[0] = (volatile unsigned int *) ioremap(0x44E07000, 0x400);
    halts.gpios[1] = (volatile unsigned int *) ioremap(0x4804C000, 0x400);
    halts.gpios[2] = (volatile unsigned int *) ioremap(0x481AC000, 0x400);
