@@ -84,31 +84,44 @@ static int alt_cs_assert(Pin* pin, int do_assert) {
 static Pin spi_cs_alts[2];
 
 static ssize_t spi_cs_alt_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
-   int retval = sprintf(buf, "%d %d %d\n", spi_cs_alts[1].gpio, spi_cs_alts[1].idx, spi_cs_alts[1].activelow);
-   return retval;
+	//  int offset = strcmp(attr->attr.name, "spi1_cs_alt") == 0;
+	int offset = 1;
+	int retval = sprintf(buf, "%d %d %d\n", spi_cs_alts[offset].gpio, spi_cs_alts[offset].idx, spi_cs_alts[offset].activelow);
+	return retval;
 }
 
 static ssize_t spi_cs_alt_store(struct kobject *kobj, struct kobj_attribute *attr,
                              const char *buf, size_t count){
-	 alt_cs_assert(spi_cs_alts+1, 0);  // deassert previous cs
-   sscanf(buf, "%hhd %hhd %hhd", &spi_cs_alts[1].gpio, &spi_cs_alts[1].idx, &spi_cs_alts[1].activelow);
-	 spi_cs_alts[1].activelow = !!spi_cs_alts[1].activelow;
-   return count;
+	//  int offset = strcmp(attr->attr.name, "spi1_cs_alt") == 0;
+	int offset = 1;
+	 
+	alt_cs_assert(spi_cs_alts+offset, 0);  // deassert previous cs
+	sscanf(buf, "%hhd %hhd %hhd", &spi_cs_alts[offset].gpio, &spi_cs_alts[offset].idx, &spi_cs_alts[offset].activelow);
+	spi_cs_alts[offset].activelow = !!spi_cs_alts[offset].activelow;
+	return count;
 }
 
+static struct kobj_attribute spi0_cs_alt_attr_obj = __ATTR(spi0_cs_alt,  S_IWUSR | S_IRUGO, spi_cs_alt_show, spi_cs_alt_store);
 static struct kobj_attribute spi1_cs_alt_attr_obj = __ATTR(spi1_cs_alt,  S_IWUSR | S_IRUGO, spi_cs_alt_show, spi_cs_alt_store);
 
 static int spi_cs_alt_init(void) {
-   int result = 0;
-	 spi_cs_alts[0].gpio = -1;
-	 spi_cs_alts[1].gpio = -1;
-   result = sysfs_create_file(kernel_kobj, &spi1_cs_alt_attr_obj.attr);
-   if(result) {
-      printk(KERN_ALERT "SPI CS Alt: failed to create sysfs group\n");
-      return result;
-   }
+	int result = 0;
+	static uint8_t init = 0;
+	if (init) return 0;
+	init = 1;
 
-   return result;
+	spi_cs_alts[0].gpio = -1;
+	spi_cs_alts[1].gpio = -1;
+	result = sysfs_create_file(kernel_kobj, &spi0_cs_alt_attr_obj.attr);
+	if(result) {
+		printk(KERN_ALERT "SPI0 CS Alt: failed to create sysfs group\n");
+	}
+	result = sysfs_create_file(kernel_kobj, &spi1_cs_alt_attr_obj.attr);
+	if(result) {
+		printk(KERN_ALERT "SPI1 CS Alt: failed to create sysfs group\n");
+	}
+
+	return result;
 }
 ////// END Kyle Howen's Userspace Multi-Chipselect Interface
 
