@@ -2,7 +2,6 @@
 
 
 #define I2CSPEED_COUNT 3
-static short i2cspeed_idx;
 static char i2cspeed_is_init = 0;
 struct I2cSpeed {
 	struct omap_i2c_dev *omap;
@@ -10,18 +9,18 @@ struct I2cSpeed {
 
 
 static ssize_t i2c_speed_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf) {
-	int idx = i2cspeed_idx;
-	int retval = 0;
+	int idx;
 	struct omap_i2c_dev *omap;
-	u32 speed = -1;
+	u32 speeds[I2CSPEED_COUNT] = {0};
 
-	if (0 <= idx && idx < I2CSPEED_COUNT) {
+	for (idx = 0; idx < I2CSPEED_COUNT; idx++) {
 		omap = i2cdevs[idx].omap;
-		if (!omap) { return 0; }
-		speed = 48000000 / ((omap->pscstate + 1) * (omap->scllstate + 5 + omap->sclhstate + 7)); 
-		retval = sprintf(buf, "%d\n", speed);
+		speeds[idx] = 0;
+		if (!omap) { continue; }
+		speeds[idx] = 48000000 / ((omap->pscstate + 1) * (omap->scllstate + 5 + omap->sclhstate + 7)); 
 	}
-	return retval;
+
+	return sprintf(buf, "%d %d %d\n", speeds[0], speeds[1], speeds[2]);
 }
 
 static ssize_t i2c_speed_store(struct kobject *kobj, struct kobj_attribute *attr,
@@ -36,7 +35,6 @@ static ssize_t i2c_speed_store(struct kobject *kobj, struct kobj_attribute *attr
 		if (0 > idx || idx >= I2CSPEED_COUNT) { return count; }
 		omap = i2cdevs[idx].omap;
 		if (!omap) { return 0; }
-		i2cspeed_idx = idx;
 		omap->pscstate = psc;
 		omap->sclhstate = sclh;
 		omap->scllstate = scll;
@@ -44,7 +42,6 @@ static ssize_t i2c_speed_store(struct kobject *kobj, struct kobj_attribute *attr
 		sscanf(buf, "%d %d", &idx, &speed);
 		omap = i2cdevs[idx].omap;
 		if (!omap) { return 0; }
-		i2cspeed_idx = idx;
 		if (speed <= 200000) {
 			omap->pscstate = 0xb;
 			omap->sclhstate = 0xf;
