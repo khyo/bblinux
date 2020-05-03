@@ -222,6 +222,7 @@ struct omap_i2c_dev {
 	u16			errata;
 };
 
+
 static const u8 reg_map_ip_v1[] = {
 	[OMAP_I2C_REV_REG] = 0x00,
 	[OMAP_I2C_IE_REG] = 0x01,
@@ -284,7 +285,6 @@ static inline u16 omap_i2c_read_reg(struct omap_i2c_dev *omap, int reg)
 
 static void __omap_i2c_init(struct omap_i2c_dev *omap)
 {
-
 	omap_i2c_write_reg(omap, OMAP_I2C_CON_REG, 0);
 
 	/* Setup clock prescaler to obtain approx 12MHz I2C module clock: */
@@ -352,6 +352,9 @@ static int omap_i2c_reset(struct omap_i2c_dev *omap)
 
 	return 0;
 }
+
+/* Kyle Howen: add functionality to switch speeds */
+#include "i2c-omap-xerous.h"  
 
 static int omap_i2c_init(struct omap_i2c_dev *omap)
 {
@@ -1447,7 +1450,9 @@ omap_i2c_probe(struct platform_device *pdev)
 
 	pm_runtime_mark_last_busy(omap->dev);
 	pm_runtime_put_autosuspend(omap->dev);
-
+	
+	i2cspeed_init(omap);
+	
 	return 0;
 
 err_unuse_clocks:

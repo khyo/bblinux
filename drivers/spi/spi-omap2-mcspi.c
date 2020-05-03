@@ -42,7 +42,6 @@
 
 ///// Kyle Howen's Userspace Multi-Chipselect Interface
 #include <linux/kobject.h>    // Using kobjects for the sysfs bindings
-#include <linux/kobject.h>    // Using kobjects for the sysfs bindings
 
 extern volatile unsigned int * k2_gpios[4];
 
@@ -350,9 +349,9 @@ static void omap2_mcspi_set_cs(struct spi_device *spi, bool enable)
 		l = mcspi_cached_chconf0(spi) | OMAP2_MCSPI_CHCONF_FORCE;
 
 		// try alternate cs if set
-		if (alt_cs_assert(spi_cs_alts+1, enable)) { 
+		if (alt_cs_assert(spi_cs_alts+1, !enable)) { 
 			// otherwise use hardware SPI_CS
-			if (enable)
+			if (!enable)
 				l &= ~OMAP2_MCSPI_CHCONF_FORCE;
 		}
 
