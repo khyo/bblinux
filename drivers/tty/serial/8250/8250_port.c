@@ -1559,7 +1559,7 @@ static inline void __start_tx(struct uart_port *port)
 	struct uart_8250_port *up = up_to_u8250p(port);
 
 	if (up->dma && !up->dma->tx_dma(up)) {
-		printk("uart-tx_dma:0");
+		// printk("uart-tx_dma:0");
 		return;
 	}
 
@@ -1894,7 +1894,7 @@ int serial8250_handle_irq(struct uart_port *port, unsigned int iir)
 	status = serial_port_in(port, UART_LSR);
 
 	if (status & (UART_LSR_DR | UART_LSR_BI)) {
-		printk("irq-dr:%x", status);
+		// printk("irq-dr:%x", status);
 		if (!up->dma || handle_rx_dma(up, iir))
 			status = serial8250_rx_chars(up, status);
 	}

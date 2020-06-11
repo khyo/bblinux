@@ -180,7 +180,7 @@
   P8_41 { gpio = <&gpio2 10 0>; output; init-low; dir-changeable; };
   P8_42 { gpio = <&gpio2 11 0>; output; init-low; dir-changeable; };
   P8_43 { gpio = <&gpio2  8 0>; output; init-low; dir-changeable; };
-  P8_44 { gpio = <&gpio2  9 0>; output; init-low; dir-changeable; };
+  P8_44 { gpio = <&gpio2  9 0>; output; init-high; dir-changeable; };
   P8_45 { gpio = <&gpio2  6 0>; output; init-low; dir-changeable; };
   P8_46 { gpio = <&gpio2  7 0>; output; init-low; dir-changeable; };
 
