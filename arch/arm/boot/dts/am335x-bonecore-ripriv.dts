@@ -311,7 +311,7 @@
   };
 };
 
-// &rtc1 { status = "disabled"; };
+&rtc1 { status = "disabled"; };
 
 / {
 	model = "TI AM335x Bonecore WiFi Test-Bed";
