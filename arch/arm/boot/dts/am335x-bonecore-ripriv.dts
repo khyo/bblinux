@@ -288,7 +288,7 @@
 &spi0 {
   status = "okay";
   pinctrl-names = "default";
-  pinctrl-0 = <&bb_spi0_pins>;
+  // pinctrl-0 = <&bb_spi0_pins>;
 
   spidev@0 {
     compatible = "linux,spidev";
@@ -311,7 +311,7 @@
   };
 };
 
-
+// &rtc1 { status = "disabled"; };
 
 / {
 	model = "TI AM335x Bonecore WiFi Test-Bed";

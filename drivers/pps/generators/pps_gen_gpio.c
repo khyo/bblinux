@@ -23,15 +23,17 @@
 #include <linux/hrtimer.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
+#include <linux/kobject.h>    // Using kobjects for the sysfs bindings
+
 
 #define DRVDESC "GPIO PPS signal generator"
 MODULE_AUTHOR("Juan Solano <jsm@jsolano.com>");
 MODULE_DESCRIPTION(DRVDESC);
 MODULE_LICENSE("GPL");
 
-#define GPIO_PULSE_WIDTH_DEF_NS (30 * NSEC_PER_USEC)    /* 30us */
+#define GPIO_PULSE_WIDTH_DEF_NS 0  // (30 * NSEC_PER_USEC)    /* 30us */
 #define GPIO_PULSE_WIDTH_MAX_NS (100 * NSEC_PER_USEC)   /* 100us */
-#define SAFETY_INTERVAL_NS      (10 * NSEC_PER_USEC)    /* 10us */
+#define SAFETY_INTERVAL_NS      0 // (10 * NSEC_PER_USEC)    /* 10us */
 
 enum pps_gen_gpio_level {
 	PPS_GPIO_LOW = 0,
@@ -53,19 +55,43 @@ struct pps_gen_gpio_devdata {
 /* Average of hrtimer interrupt latency. */
 static long hrtimer_avg_latency = SAFETY_INTERVAL_NS;
 
+
+static void pps_gen_gpio_startup(void);
+
+static struct pps_gen_gpio_devdata* _gdevdata = 0;
+static int gpiopps_started = 0;
+static ssize_t gpiopps_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                   const char *buf, size_t count){
+	sscanf(buf, "%du", &gpiopps_started);
+	// sysfs_notify(kobj, NULL, attr->attr.name);
+	if (gpiopps_started) {
+		pps_gen_gpio_startup();
+	}
+	return count;
+}
+
+static ssize_t gpiopps_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+	int retval = sprintf(buf, "%d\n", gpiopps_started);
+	return retval;
+}
+
+static struct kobj_attribute pps_attr_obj = __ATTR(gpiopps,  S_IWUSR | S_IRUGO, gpiopps_show, gpiopps_store);
+
+static int gpiopps_init(void) {
+	int result = 0;
+	result = sysfs_create_file(kernel_kobj, &pps_attr_obj.attr);
+	return result;
+}
+
+
 /* hrtimer event callback */
 static enum hrtimer_restart hrtimer_callback(struct hrtimer *timer)
 {
 	unsigned long irq_flags;
-	long hrtimer_latency;
+	long hrtimer_latency, pps_error_ns, time_calc_ns;
 	struct pps_gen_gpio_devdata *devdata =
 		container_of(timer, struct pps_gen_gpio_devdata, timer);
-	const long time_gpio_deassert_ns =
-		NSEC_PER_SEC - devdata->gpio_instr_time;
-	const long time_gpio_assert_ns =
-		time_gpio_deassert_ns - gpio_pulse_width_ns;
-	struct timespec ts_expire_req, ts_expire_real, ts_gpio_instr_time,
-			ts_hrtimer_latency, ts1, ts2;
+	struct timespec ts_expire_req, ts_expire_real, ts_hrtimer_latency;
 
 	/* We have to disable interrupts here. The idea is to prevent
 	 * other interrupts on the same processor to introduce random
@@ -78,65 +104,54 @@ static enum hrtimer_restart hrtimer_callback(struct hrtimer *timer)
 	 */
 	local_irq_save(irq_flags);
 
-	/* Get current timestamp and requested time to check if we are late. */
+	/* Get current timestamp and requested time to check if we are late. */	
 	getnstimeofday(&ts_expire_real);
-	ts_expire_req = ktime_to_timespec(hrtimer_get_softexpires(timer));
-	if (ts_expire_req.tv_sec != ts_expire_real.tv_sec
-	    || ts_expire_real.tv_nsec > time_gpio_assert_ns) {
-		local_irq_restore(irq_flags);
-		pr_err("We are late this time [%ld.%09ld]\n",
-		       ts_expire_real.tv_sec, ts_expire_real.tv_nsec);
-		goto done;
+	ts_expire_req.tv_sec  = ts_expire_real.tv_sec;
+	ts_expire_req.tv_nsec = 0;	
+	if (ts_expire_real.tv_nsec > NSEC_PER_SEC/2) {
+		ts_expire_req.tv_sec += 1;
 	}
+	ts_hrtimer_latency = timespec_sub(ts_expire_real, ts_expire_req);
+	pps_error_ns = timespec_to_ns(&ts_hrtimer_latency);
 
-	/* Busy loop until the time is right for a GPIO assert. */
-	do
-		getnstimeofday(&ts1);
-	while (ts_expire_req.tv_sec == ts1.tv_sec
-	       && ts1.tv_nsec < time_gpio_assert_ns);
-
-	/* Assert PPS GPIO. */
-	gpiod_set_value(devdata->pps_gpio, PPS_GPIO_HIGH);
-
-	/* Busy loop until the time is right for a GPIO deassert. */
-	do
-		getnstimeofday(&ts1);
-	while (ts_expire_req.tv_sec == ts1.tv_sec
-	       && ts1.tv_nsec < time_gpio_deassert_ns);
-
-	/* Deassert PPS GPIO. */
-	gpiod_set_value(devdata->pps_gpio, PPS_GPIO_LOW);
-
-	getnstimeofday(&ts2);
+	if (-50000 < pps_error_ns && pps_error_ns < 50000) {
+		/* Assert PPS GPIO. */
+		gpiod_set_value(devdata->pps_gpio, PPS_GPIO_HIGH);
+		/* Deassert PPS GPIO. */
+		gpiod_set_value(devdata->pps_gpio, PPS_GPIO_LOW);
+	}
 	local_irq_restore(irq_flags);
 
-	/* Update the calibrated GPIO set instruction time. */
-	ts_gpio_instr_time = timespec_sub(ts2, ts1);
-	devdata->gpio_instr_time = (devdata->gpio_instr_time
-				    + timespec_to_ns(&ts_gpio_instr_time)) / 2;
 
-done:
-	/* Update the average hrtimer latency. */
+	getnstimeofday(&ts_hrtimer_latency);
+	ts_hrtimer_latency = timespec_sub(ts_expire_real, ts_hrtimer_latency);
+	time_calc_ns = timespec_to_ns(&ts_hrtimer_latency);
+
+	ts_expire_req = ktime_to_timespec(hrtimer_get_softexpires(timer));
 	ts_hrtimer_latency = timespec_sub(ts_expire_real, ts_expire_req);
 	hrtimer_latency = timespec_to_ns(&ts_hrtimer_latency);
 
-	/* If the new latency value is bigger then the old, use the new
-	 * value, if not then slowly move towards the new value. This
-	 * way it should be safe in bad conditions and efficient in
-	 * good conditions.
-	 */
-	if (hrtimer_latency > hrtimer_avg_latency)
-		hrtimer_avg_latency = hrtimer_latency;
-	else
+	if (-50000 < pps_error_ns && pps_error_ns < 50000) {
+		/* Update the average hrtimer latency. */
 		hrtimer_avg_latency =
 			(3 * hrtimer_avg_latency + hrtimer_latency) / 4;
+	}
 
+	if (hrtimer_latency < -100000000 || hrtimer_latency > 100000000) {
+		ts_expire_req.tv_sec = ts_expire_real.tv_sec + 1;
+		pr_err("gpiopps resync! [%ld.%09ld] latency: %ld ns\n", 
+			ts_expire_real.tv_sec, 
+			ts_expire_real.tv_nsec, hrtimer_latency);
+	}
+	if (gpiopps_started == 2)
+		pr_err("gpiopps [%ld.%09ld] latency: %ld, pps_error: %ld ns, %ld ns\n", 
+			ts_expire_real.tv_sec, ts_expire_real.tv_nsec, hrtimer_latency, 
+			pps_error_ns, time_calc_ns);
+	
 	/* Update the hrtimer expire time. */
 	hrtimer_set_expires(timer,
-			    ktime_set(ts_expire_req.tv_sec + 1,
-				      time_gpio_assert_ns
-				      - hrtimer_avg_latency
-				      - SAFETY_INTERVAL_NS));
+			    ktime_set(ts_expire_req.tv_sec + 1, 
+			    	      NSEC_PER_SEC - (hrtimer_avg_latency + devdata->gpio_instr_time)));
 
 	return HRTIMER_RESTART;
 }
@@ -144,26 +159,28 @@ done:
 /* Initial calibration of GPIO set instruction time. */
 #define PPS_GEN_CALIBRATE_LOOPS 100
 static void pps_gen_calibrate(struct pps_gen_gpio_devdata *devdata)
-{
+{	
 	int i;
-	long time_acc = 0;
-
+	struct timespec ts1, ts2, ts_delta;
+	long time_acc = 0, time_dummy = 0;
+	unsigned long irq_flags, irq_flags2;
+	local_irq_save(irq_flags);
+		
 	for (i = 0; i < PPS_GEN_CALIBRATE_LOOPS; i++) {
-		struct timespec ts1, ts2, ts_delta;
-		unsigned long irq_flags;
-
-		local_irq_save(irq_flags);
 		getnstimeofday(&ts1);
+		local_irq_save(irq_flags2);
+		getnstimeofday(&ts_delta);
 		gpiod_set_value(devdata->pps_gpio, PPS_GPIO_LOW);
+		ts_delta = timespec_sub(ts_delta, ts1);
+		time_dummy += timespec_to_ns(&ts_delta);
 		getnstimeofday(&ts2);
-		local_irq_restore(irq_flags);
-
 		ts_delta = timespec_sub(ts2, ts1);
 		time_acc += timespec_to_ns(&ts_delta);
 	}
-
+	local_irq_restore(irq_flags);
+	
 	devdata->gpio_instr_time = time_acc / PPS_GEN_CALIBRATE_LOOPS;
-	pr_info("PPS GPIO set takes %ldns\n", devdata->gpio_instr_time);
+	pr_info("PPS GPIO set takes %ldns, dummy: %ld\n", devdata->gpio_instr_time, time_dummy);
 }
 
 static ktime_t pps_gen_first_timer_event(struct pps_gen_gpio_devdata *devdata)
@@ -174,9 +191,7 @@ static ktime_t pps_gen_first_timer_event(struct pps_gen_gpio_devdata *devdata)
 	/* First timer callback will be triggered between 1 and 2 seconds from
 	 * now, synchronized to the tv_sec increment of the wall-clock time.
 	 */
-	return ktime_set(ts.tv_sec + 1,
-			 NSEC_PER_SEC - gpio_pulse_width_ns
-			 - devdata->gpio_instr_time - 3 * SAFETY_INTERVAL_NS);
+	return ktime_set(ts.tv_sec + 1, NSEC_PER_SEC - 20000);
 }
 
 static int pps_gen_gpio_probe(struct platform_device *pdev)
@@ -215,13 +230,10 @@ static int pps_gen_gpio_probe(struct platform_device *pdev)
 		dev_err(dev, "Cannot configure PPS GPIO\n");
 		goto err_gpio_dir;
 	}
+	
+	_gdevdata = devdata;
+	gpiopps_init();
 
-	pps_gen_calibrate(devdata);
-	hrtimer_init(&devdata->timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-	devdata->timer.function = hrtimer_callback;
-	hrtimer_start(&devdata->timer,
-		      pps_gen_first_timer_event(devdata),
-		      HRTIMER_MODE_ABS);
 	return 0;
 
 err_gpio_dir:
@@ -231,6 +243,23 @@ err_dt:
 	devm_kfree(dev, devdata);
 err_alloc:
 	return ret;
+}
+
+void pps_gen_gpio_startup(void) {
+	struct pps_gen_gpio_devdata *devdata;
+	static uint8_t startup_ran = 0;
+	if (startup_ran)
+		return;
+
+	startup_ran = 1;
+	devdata = _gdevdata;
+
+	pps_gen_calibrate(devdata);
+	hrtimer_init(&devdata->timer, CLOCK_TAI, HRTIMER_MODE_ABS);
+	devdata->timer.function = hrtimer_callback;
+	hrtimer_start(&devdata->timer,
+		      pps_gen_first_timer_event(devdata),
+		      HRTIMER_MODE_ABS);
 }
 
 static int pps_gen_gpio_remove(struct platform_device *pdev)

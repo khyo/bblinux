@@ -301,6 +301,10 @@
   };
 };
 
+&rtc1 {
+  status = "disabled";
+};
+  
 &spi1 {
   status = "okay";
   pinctrl-names = "default";
@@ -316,4 +320,12 @@
 / {
 	model = "TI AM335x Bonecore WiFi Test-Bed";
 	compatible = "ti,am335x-bone-green", "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+
+  pps-gen {
+		pinctrl-names = "default";
+		// pinctrl-0 = <&pps_gen_pins>;
+		compatible = "pps-gen-gpio";
+		pps-gen-gpio = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		default-state = "off";
+	};
 };
