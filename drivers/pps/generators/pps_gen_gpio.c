@@ -60,9 +60,14 @@ static void pps_gen_gpio_startup(void);
 
 static struct pps_gen_gpio_devdata* _gdevdata = 0;
 static int gpiopps_started = 0;
+static uint8_t gpiopps_falling_edge = 0;
 static ssize_t gpiopps_store(struct kobject *kobj, struct kobj_attribute *attr,
                                    const char *buf, size_t count){
-	sscanf(buf, "%du", &gpiopps_started);
+	int falling_edge = -1;
+	sscanf(buf, "%du %d", &gpiopps_started, &falling_edge);
+	if (falling_edge >= 0) {
+		gpiopps_falling_edge = falling_edge;
+	}
 	// sysfs_notify(kobj, NULL, attr->attr.name);
 	if (gpiopps_started) {
 		pps_gen_gpio_startup();
@@ -117,8 +122,11 @@ static enum hrtimer_restart hrtimer_callback(struct hrtimer *timer)
 	if (-50000 < pps_error_ns && pps_error_ns < 50000) {
 		/* Assert PPS GPIO. */
 		gpiod_set_value(devdata->pps_gpio, PPS_GPIO_HIGH);
-		/* Deassert PPS GPIO. */
-		gpiod_set_value(devdata->pps_gpio, PPS_GPIO_LOW);
+		if (gpiopps_falling_edge) {
+			/* Deassert PPS GPIO. */
+			gpiod_set_value(devdata->pps_gpio, PPS_GPIO_LOW);
+		}
+		
 	}
 	local_irq_restore(irq_flags);
 
