@@ -225,6 +225,11 @@
   rts-gpio = <&gpio1 13 0>;  // <pin flags>
 };
 
+&uart1 {
+  status = "okay";
+  pinctrl-names = "default";
+};
+
 &uart2 {
   status = "okay";
   pinctrl-names = "default";
@@ -266,6 +271,11 @@
   status = "okay";
   pinctrl-names = "default";
   pinctrl-0 = <&bb_ecap0_pins>;
+};
+
+&ecap2 {
+  status = "okay";
+  pinctrl-names = "default";
 };
 
 &epwmss1 {
