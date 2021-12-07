@@ -267,6 +267,10 @@
   status = "okay";
 };
 
+// &ehrpwm0 {
+//   status = "okay";
+// };
+
 &ecap0 {
   status = "okay";
   pinctrl-names = "default";
